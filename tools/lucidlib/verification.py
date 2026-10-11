@@ -1199,3 +1199,8 @@ EDITMODE_TESTS += (
     'OriginalToggleCursorVisibilityContractsTests.CachedStartPredicateKeepsWholeDiscoveredCompilerRoleWithoutStaticReads',
     'OriginalToggleCursorVisibilityContractsTests.StartIteratorKeepsCompleteInterfacesCaptureAndDebuggerAnnotationsWithoutMoving',
 )
+
+EDITMODE_TESTS += (
+    'OriginalHLInputDebugMenuContractsTests.AuthoredDebugOwnerKeepsWholeDeclarationsAndOriginalParameterNamesWithoutConstruction',
+    'OriginalHLInputDebugMenuContractsTests.DiscoveredGlyphComparatorCacheKeepsWholeRoleWithoutStaticValueReads',
+)
