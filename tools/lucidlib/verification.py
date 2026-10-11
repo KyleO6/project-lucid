@@ -1080,3 +1080,14 @@ EDITMODE_TESTS += (
     'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.MissingRectTransformFaultPrecedesStateMutation',
     'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.GenuineRequiredBehavioursEnableBeforeNullElementFault',
 )
+
+EDITMODE_TESTS += (
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.CompleteOriginalDeclarationsRetainVisibilityAndImplementationFlags',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.OrdinaryConstructorsAndConversionsPreserveUnicodeScalars',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.RawCapacityAccessAndNegativeLengthKeepShrinkOnlyPublication',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.FullCapacityCopyWritesForwardAndPublishesLengthOnlyOnSuccess',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.SelfInsertRejectsBeforeZeroCountAndSelfSubstringReadsAfterClear',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.NominalMutationsComposeAndSubstringOwnsIndependentState',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.BuilderReplacePreservesSkippedMatchAndAsymmetricShrinkQuirks',
+    'ProjectLucid.Tests.OriginalFastStringBuilderTests.ConversionFailuresRetainPublishedLengthAndRawScalarStorage',
+)

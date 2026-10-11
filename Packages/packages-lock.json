@@ -84,6 +84,12 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.hardlight.hlrtltextmeshpro": {
+      "version": "file:com.hardlight.hlrtltextmeshpro",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.hardlight.hlsplines": {
       "version": "file:com.hardlight.hlsplines",
       "depth": 0,
