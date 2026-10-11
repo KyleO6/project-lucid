@@ -1173,3 +1173,23 @@ EDITMODE_TESTS += tuple("OriginalStackedCameraTests." + name for name in (
     "StackedCameraRetainsWholeOriginalTypeFieldsAndOrderedAnnotations",
     "StackedCameraRetainsSixOriginalMethodsConstructorAndParameterContracts",
 ))
+
+# Genuine owned event, generic data, typed asset-reference and object-pointer serialization.
+EDITMODE_TESTS += tuple("OriginalGenericSerializationFrontierTests." + name for name in (
+    "OriginalGenericFieldSignaturesAndEditorProjectionRemainExplicit",
+    "OwnedClosedUnityEventExposesExactEmptyPersistentCallTree",
+    "OwnedPersistentCallPayloadRoundTripsWithoutDispatchOrTargetActivation",
+    "OwnedTypedAddressableListsPreserveGuidOrderAndEditorChildrenWithoutLoads",
+    "OwnedGenericDataSubstitutesIntWhileNonSerializableBindableAndDictionaryStayAbsent",
+    "OwnedReferenceOnlyCarrierUsesPPtrPropertiesWithoutConstructingOriginalButtons",
+))
+
+EDITMODE_TESTS += tuple("OriginalMenuDataContractsTests." + name for name in (
+    "Menu22TopLevelTypesKeepLiteralNamesAssemblyAndOriginalFlags",
+    "ParametersKeepOriginalReadonlyFieldAndOrdinaryPublicContracts",
+    "ParametersCloneAndEqualityRetainGenuineNullAndExactTypeBehavior",
+    "RecordStoresSignedIdentifiersAndOwnedReferencesWithoutDispatch",
+    "OverlayPendingValueDefaultAndCopiesRetainDataReferenceIdentity",
+    "InitializerSerializedFieldsAndConditionalStartAreMetadataOnly",
+    "MenuPageFadeFieldKeepsProtectedBooleanAndOrderedSerializationAttributes",
+))
