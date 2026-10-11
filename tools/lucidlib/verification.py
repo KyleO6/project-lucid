@@ -1051,3 +1051,11 @@ EDITMODE_TESTS += (
     'ProjectLucid.Editor.OriginalUISoundEffectManagerTests.OriginalInactiveSoundManagerWithNullSourceSuppressesPlaybackRoutes',
     'ProjectLucid.Editor.OriginalUISoundEffectManagerTests.OriginalSoundManagerForwardsPitchVolumeToOwnedMutedAudioSource',
 )
+
+EDITMODE_TESTS += (
+    'OriginalGradientTests.OriginalGradientRetainsWholeDeclarationAndOrderedAnnotations',
+    'OriginalGradientTests.OriginalGradientNormalOwnedConstructionRetainsDefaults',
+    'OriginalGradientTests.OriginalGradientPublicSettersRetainUnboundedFiniteValues',
+    'OriginalGradientTests.OriginalGradientInactiveModifyMeshKeepsWholeTriangleStream',
+    'OriginalGradientTests.OriginalGradientActiveModifyMeshReplacesColorAndUV1Only',
+)
