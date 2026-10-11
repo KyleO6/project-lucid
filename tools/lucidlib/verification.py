@@ -1167,3 +1167,9 @@ EDITMODE_TESTS += tuple("OriginalUIVisibilityControllerTests." + name for name i
     "InputVisibilityInactiveOwnedBindingsRoundTripWithoutBridgeOrSubscription",
     "PlatformVisibilityInactiveOwnedBindingRoundTripsWithoutActivatingOverrides",
 ))
+
+# Original stacked-camera declaration obligations.
+EDITMODE_TESTS += tuple("OriginalStackedCameraTests." + name for name in (
+    "StackedCameraRetainsWholeOriginalTypeFieldsAndOrderedAnnotations",
+    "StackedCameraRetainsSixOriginalMethodsConstructorAndParameterContracts",
+))
