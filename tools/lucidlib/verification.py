@@ -1066,4 +1066,10 @@ EDITMODE_TESTS += (
     'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalEffectManagerSamplesEighteenGenuineSerializedFiniteCurves',
     'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalEffectManagerReturnsGenuineOwnedSerializedVisualValues',
     'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalAudioCueRoundTripsRawKeysAndEmptyManagerSuppressesDispatch',
+    'ProjectLucid.Editor.OriginalEaseUtilitiesTests.OriginalDeclarationsAndOrderedOptionMetadata',
+    'ProjectLucid.Editor.OriginalEaseUtilitiesTests.PolynomialNominalValuesAndRawInputs',
+    'ProjectLucid.Editor.OriginalEaseUtilitiesTests.OriginalIntegralValuesAndUpperBranchDiscontinuity',
+    'ProjectLucid.Editor.OriginalEaseUtilitiesTests.TranscendentalBounceAndBackNominalValues',
+    'ProjectLucid.Editor.OriginalEaseUtilitiesTests.LiteralDispatcherAndDefaultPassThrough',
+    'ProjectLucid.Editor.OriginalEaseUtilitiesTests.EndpointClampsAndNaNPropagation',
 )

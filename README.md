@@ -44,7 +44,7 @@ records. Original cloud saves and global rankings are not included.
 <!-- LUCID_CODE_PROGRESS:START -->
 ## Progress
 
-**8,636 of 25,897 original methods have maintained source implementations (33.35%).**
+**8,670 of 25,897 original methods have maintained source implementations (33.48%).**
 
 | Assembly | Methods with source | Original methods | Progress |
 |---|---:|---:|---:|
@@ -68,9 +68,9 @@ records. Original cloud saves and global rankings are not included.
 | HLPhysics.Runtime | 13 | 24 | 54.17% |
 | HLRTLTextMeshPro.Runtime | 0 | 109 | 0.00% |
 | HLSplines.Runtime | 786 | 1,299 | 60.51% |
-| HLUnityCore.Runtime | 1,469 | 4,200 | 34.98% |
+| HLUnityCore.Runtime | 1,503 | 4,200 | 35.79% |
 | HLUnityUI.Runtime | 195 | 1,724 | 11.31% |
-| **Total** | **8,636** | **25,897** | **33.35%** |
+| **Total** | **8,670** | **25,897** | **33.48%** |
 
 Generated from original method signatures and compiled source. Counts are conservative: ambiguous signatures and recognized trivial or placeholder patterns are excluded, including some genuine trivial methods. These counts cover methods with original native bodies; the game is not yet playable.
 <!-- LUCID_CODE_PROGRESS:END -->
