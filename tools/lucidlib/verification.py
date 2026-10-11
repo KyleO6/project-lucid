@@ -1072,4 +1072,11 @@ EDITMODE_TESTS += (
     'ProjectLucid.Editor.OriginalEaseUtilitiesTests.TranscendentalBounceAndBackNominalValues',
     'ProjectLucid.Editor.OriginalEaseUtilitiesTests.LiteralDispatcherAndDefaultPassThrough',
     'ProjectLucid.Editor.OriginalEaseUtilitiesTests.EndpointClampsAndNaNPropagation',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.OriginalDeclarationsAndAbstractModificationContract',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.OrdinaryTargetArraysPreserveEmptyAndNullFaults',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.OwnedInactiveCanvasLayerOverloadsAndReset',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.InactiveStatesCopyListsAndResetAnchorsWithoutCoroutine',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.NullDefaultFaultFollowsAnchorAndCacheRotation',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.MissingRectTransformFaultPrecedesStateMutation',
+    'ProjectLucid.Editor.OriginalHLButtonHighlighterTests.GenuineRequiredBehavioursEnableBeforeNullElementFault',
 )
