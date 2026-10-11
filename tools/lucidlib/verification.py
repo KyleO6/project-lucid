@@ -1204,3 +1204,13 @@ EDITMODE_TESTS += (
     'OriginalHLInputDebugMenuContractsTests.AuthoredDebugOwnerKeepsWholeDeclarationsAndOriginalParameterNamesWithoutConstruction',
     'OriginalHLInputDebugMenuContractsTests.DiscoveredGlyphComparatorCacheKeepsWholeRoleWithoutStaticValueReads',
 )
+
+EDITMODE_TESTS += (
+    'OriginalLocalisedUIStringContractsTests.LocalisedOwnerKeepsWholeTypeAndOrderedOptionsWithoutConstruction',
+    'OriginalLocalisedUIStringContractsTests.LocalisedFieldsKeepExactTargetTypesAndHashEnumSerializationOrder',
+    'OriginalLocalisedUIStringContractsTests.LocalisedMethodsKeepPublicLifecycleAndExactNullOverrideContract',
+    'OriginalLocalisedUIStringOwnedTextTests.InactiveOriginalDiscoveryWritesOwnedUguiTextAndEmptyOverrideWithoutLookup',
+    'OriginalAssetReferenceProfileTests.OwnedClosedAssetReferenceExposesFourEditorChildrenWithoutAnOperation',
+    'OriginalAssetReferenceProfileTests.OwnedRealAssetAssignmentPreservesGuidAndTrueEditorFlagThroughSerialization',
+    'OriginalAssetReferenceProfileTests.OwnedPublicNullClearSetsEditorFlagAndClearsGuidAndSubObjectName',
+)
