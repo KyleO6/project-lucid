@@ -244,13 +244,16 @@ class _Comparison:
                 visit(dependency, as_field=True)
 
         def visit(owner, as_field=False):
-            if owner in checked or owner in active:
+            # A pointer dependency and the owner's complete MonoScript layout
+            # are separate obligations, even when both occur in one graph.
+            role = owner, as_field
+            if role in checked or role in active:
                 return
             left, right = self.original.get(owner), self.loaded.get(owner)
             if left is None or right is None:
                 issue("missing_layout_dependency", owner)
                 return
-            active.add(owner)
+            active.add(role)
             try:
                 lfields = _candidate_fields(left, require_string_evidence=True)
                 rfields = _candidate_fields(right)
@@ -281,6 +284,11 @@ class _Comparison:
                     issue("type_flags_mismatch", owner)
                 if _attributes(left, require_string_evidence=True) != _attributes(right):
                     issue("type_attributes_mismatch", owner)
+                # PPtr storage ends at the reference boundary. Prove both
+                # complete, closed, scoped ancestry graphs before traversing
+                # an inherited component's payload as inline serialized data.
+                if as_field and not left.get("is_enum") and not left.get("is_value_type") and self._unity_object(owner):
+                    return
                 lbase, rbase = left.get("base_type"), right.get("base_type")
                 if lbase is None or rbase is None:
                     if lbase != rbase:
@@ -323,11 +331,6 @@ class _Comparison:
                     return
                 if as_field and not (left.get("attributes", 0) & 0x2000) and not self._unity_object(owner):
                     issue("field_type_eligibility_unverified", owner, "not a serializable data type or Unity object")
-                # Unity object references store identity, not the pointed-to
-                # component's serialized members. The caller itself still gets
-                # its full layout compared when it is the target MonoScript.
-                if as_field and self._unity_object(owner):
-                    return
                 if [f["name"] for f in lfields] != [f["name"] for f in rfields]:
                     issue("serialized_field_order_or_names_mismatch", owner,
                           repr([f["name"] for f in lfields]) + " != " + repr([f["name"] for f in rfields]))
@@ -344,25 +347,68 @@ class _Comparison:
             except (LayoutError, KeyError, TypeError, ValueError, OverflowError) as error:
                 issue("incomplete_or_invalid_layout", owner, str(error))
             finally:
-                active.remove(owner)
-                checked.add(owner)
+                active.remove(role)
+                checked.add(role)
 
         visit(key)
         # Sort/deduplicate diagnostics without changing field comparison order.
         return sorted({json.dumps(item, sort_keys=True): item for item in issues}.values(), key=lambda item: json.dumps(item, sort_keys=True))
 
     def _unity_object(self, key):
+        """Prove a closed PPtr ancestry on BOTH complete declaration graphs.
+
+        Raw fields, CAD, constraints and physical tokens remain in each report.
+        A named reference stores identity; payload eligibility belongs to the
+        pointed-to MonoScript's separate full layout comparison.
+        """
         seen = set()
-        while key not in seen:
+        while key not in {
+            ("mscorlib", "System.Object"), ("mscorlib", "System.ValueType"), ("mscorlib", "System.Enum")
+        }:
+            if key in seen:
+                raise LayoutError("Cyclic Unity object ancestry")
             seen.add(key)
-            if key == ("UnityEngine.CoreModule", "UnityEngine.Object"):
-                return True
-            record = self.original.get(key)
-            base = record.get("base_type") if record else None
-            if not base or base.get("kind") != "named":
+            left, right = self.original.get(key), self.loaded.get(key)
+            if left is None or right is None:
+                raise LayoutError("Missing dual Unity object ancestry declaration: " + repr(key))
+            for record, original in ((left, True), (right, False)):
+                if (record.get("assembly"), record.get("full_name")) != key:
+                    raise LayoutError("Unity object ancestry identity does not match its record")
+                _candidate_fields(record, require_string_evidence=original)
+                if type(record.get("attributes")) is not int or not isinstance(record.get("generic_parameters"), list):
+                    raise LayoutError("Incomplete Unity object ancestry type contract")
+                if record["generic_parameters"]:
+                    raise LayoutError("Open generic Unity object ancestry is unsupported")
+                for label in ("is_value_type", "is_enum", "is_abstract", "unity_component", "unity_scriptable_object"):
+                    if type(record.get(label)) is not bool:
+                        raise LayoutError("Incomplete Unity object ancestry shape: " + label)
+                if record["is_value_type"] or record["is_enum"] or record["attributes"] & 0x20:
+                    raise LayoutError("Unity object ancestry is not a reference class")
+            for label in ("is_abstract", "declaring_type", "unity_component", "unity_scriptable_object"):
+                if left.get(label) != right.get(label):
+                    raise LayoutError("Unity object ancestry shape differs: " + label)
+            if (left["attributes"] & 0x2038) != (right["attributes"] & 0x2038):
+                raise LayoutError("Unity object ancestry type flags differ")
+            if _attributes(left, require_string_evidence=True) != _attributes(right):
+                raise LayoutError("Unity object ancestry attributes differ")
+            lbase, rbase = left.get("base_type"), right.get("base_type")
+            if lbase is None or rbase is None:
+                if lbase != rbase:
+                    raise LayoutError("Unity object ancestry base differs")
+                if key == ("UnityEngine.CoreModule", "UnityEngine.Object"):
+                    raise LayoutError("Unity object root lacks its complete System.Object base")
                 return False
-            key = base["assembly"], base["reflection_full_name"]
-        raise LayoutError("Cyclic Unity object ancestry")
+            if type_identity(lbase) != type_identity(rbase):
+                raise LayoutError("Unity object ancestry base identity differs")
+            if lbase["kind"] != "named":
+                raise LayoutError("Unity object ancestry base is not a closed named type")
+            next_key = lbase["assembly"], lbase["reflection_full_name"]
+            if key == ("UnityEngine.CoreModule", "UnityEngine.Object"):
+                if next_key != ("mscorlib", "System.Object"):
+                    raise LayoutError("Unity object root has an invalid base")
+                return True
+            key = next_key
+        return False
 
 
 def compare_layouts(schema_report: dict, reflection_inventory: dict, *, schema_sha256=None) -> dict:
