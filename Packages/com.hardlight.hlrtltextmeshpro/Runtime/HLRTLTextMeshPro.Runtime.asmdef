@@ -1,7 +1,10 @@
 {
   "name": "HLRTLTextMeshPro.Runtime",
   "rootNamespace": "RTLTMPro",
-  "references": [],
+  "references": [
+    "Unity.TextMeshPro",
+    "HLUnityCore.Runtime"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

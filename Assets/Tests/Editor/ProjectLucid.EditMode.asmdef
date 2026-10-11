@@ -16,7 +16,8 @@
     "HLUnityUI.Runtime",
     "ProjectLucid.Screen.EngineVerification",
     "UnityEngine.UI",
-    "HLRTLTextMeshPro.Runtime"
+    "HLRTLTextMeshPro.Runtime",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"

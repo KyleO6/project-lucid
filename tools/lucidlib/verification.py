@@ -1091,3 +1091,21 @@ EDITMODE_TESTS += (
     'ProjectLucid.Tests.OriginalFastStringBuilderTests.BuilderReplacePreservesSkippedMatchAndAsymmetricShrinkQuirks',
     'ProjectLucid.Tests.OriginalFastStringBuilderTests.ConversionFailuresRetainPublishedLengthAndRawScalarStorage',
 )
+
+EDITMODE_TESTS += (
+    'OriginalTMPSettingsSerializationTests.OwnedTMPSettingsExposesBuiltinVector2FieldsAndZeroChildren',
+    'OriginalTMPSettingsSerializationTests.OwnedTMPSettingsOmitsNonSerializableLineBreakingTableBeforeHashSetTraversal',
+)
+
+EDITMODE_TESTS += (
+    'ProjectLucid.Tests.OriginalRTLShapingTests.CompleteHandwrittenDeclarationsAndOriginalOptionalDefaultsArePreserved',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.SignedChar32GateAndNumberSelectionRetainTheirBoundaries',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.FirstVisibleLetterAndTagClassificationPreserveTheOriginalThrow',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.GenuineGlyphTableAndAllFourLamJoinsRemainLiteral',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.YahAndNumberTagProtectionUseGenuinePublicTransformations',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.RichTextTagFieldsAndWholeTagReversalKeepOriginalOrder',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.TashkeelPositionsAndRepeatedRestorePreserveSharedStateSemantics',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.ShaddaCombinesOnlyItsOriginalFollowingMarks',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.LigatureReversalAppendsAndPreservesTheOriginalScalarQuirk',
+    'ProjectLucid.Tests.OriginalRTLShapingTests.WholePipelineDefaultsAndSuccessiveCallsUseGenuineSharedBuffers',
+)
