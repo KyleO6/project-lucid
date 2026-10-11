@@ -1193,3 +1193,9 @@ EDITMODE_TESTS += tuple("OriginalMenuDataContractsTests." + name for name in (
     "InitializerSerializedFieldsAndConditionalStartAreMetadataOnly",
     "MenuPageFadeFieldKeepsProtectedBooleanAndOrderedSerializationAttributes",
 ))
+
+EDITMODE_TESTS += (
+    'OriginalToggleCursorVisibilityContractsTests.AuthoredCursorOwnerKeepsAllFieldsMethodsAndOrderedOptionsWithoutConstruction',
+    'OriginalToggleCursorVisibilityContractsTests.CachedStartPredicateKeepsWholeDiscoveredCompilerRoleWithoutStaticReads',
+    'OriginalToggleCursorVisibilityContractsTests.StartIteratorKeepsCompleteInterfacesCaptureAndDebuggerAnnotationsWithoutMoving',
+)
