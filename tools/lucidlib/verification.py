@@ -387,6 +387,16 @@ EDITMODE_TESTS += (
     "ProjectLucid.Tests.OriginalFontReadinessTransitionTests.FontReadinessFactoryIgnoresJsonAndUsesTheGenuineOwnedTransitionRegistry",
 )
 
+EDITMODE_TESTS += tuple("OriginalBadgeStartTests." + name for name in (
+    "BadgeDeclarationsRetainOriginalSerializedFieldsAndOptionalLeaf",
+    "BadgeInactiveConstructionRetainsGenuineSerializedDefaults",
+    "BadgeNonpositiveFalseAlertsDisableOwnedTargetBeforeTextUse",
+    "StartAuthoredDeclarationsRetainOriginalBindingsAndCallbacksWithoutConstruction",
+    "StartNaturalIteratorsRetainCompleteRolesWithoutStartingMenuFlow",
+    "StartRewardsPublishCollectedBeforeTotalAndUseZerosForMissingEntry",
+    "StartRewardsRetainOwnedCallbackAndNullFaultPublicationOrder",
+))
+
 PLAYMODE_TESTS = (
     "ProjectLucid.Tests.OfflineStartupTests.ReachesOriginalMainMenu",
     "ProjectLucid.Tests.LocalSaveSlotTests.CreateCopyDeleteAndRestart",

@@ -21,7 +21,8 @@
     "HLUnityUI.Runtime",
     "Unity.Timeline",
     "UnityEngine.UI",
-    "Unity.TextMeshPro"
+    "Unity.TextMeshPro",
+    "HLRTLTextMeshPro.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

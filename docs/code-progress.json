@@ -20,12 +20,12 @@
     },
     {
       "assembly": "Game.Runtime",
-      "implemented_source_bodies": 4923,
-      "not_implemented": 7918,
+      "implemented_source_bodies": 4938,
+      "not_implemented": 7877,
       "original_declarations": 16004,
       "original_native_bodies": 15624,
-      "unresolved_identities": 632,
-      "withheld_bodies": 2151
+      "unresolved_identities": 636,
+      "withheld_bodies": 2173
     },
     {
       "assembly": "HLAnalytics.Runtime",
@@ -200,7 +200,7 @@
     }
   ],
   "behavior_parity_verified": false,
-  "compiler_receipt_sha256": "5a6b8d50397449396fd53bf3116e409f6d66105e749f902b1dd4fecf7483d985",
+  "compiler_receipt_sha256": "021f2d48faf712da7507147caf339fa08bf2fd21100015db6c4387da2834dec5",
   "generated_by": "ProjectLucid.code_progress",
   "input_binary_sha256": "6c89f9837ba64b8799c68ce1ac2bd7b48bf7e23a16bb26657a998c6fc3e34216",
   "input_metadata_sha256": "acb10c65e45486ff62a39fd677404857f99a3d2a98fdd36362d0bf19aac4b89b",
@@ -208,13 +208,13 @@
   "native_byte_matching_verified": false,
   "schema_version": 1,
   "scope_sha256": "e7dfba0c3ea54180ebbe8684c7b9068f14c82f530be9f7547a88c2610fc38c9a",
-  "source_fingerprint": "91daf176d9a39b9b7f2772c2bd5cc10fc39dcf6d2f89cd688109b061f00bde52",
+  "source_fingerprint": "6576e30364c28f30c3813163d62e5cfbcb61d117b35e9c0f7ab35dc1c0e0c708",
   "totals": {
-    "implemented_source_bodies": 8983,
-    "not_implemented": 11778,
+    "implemented_source_bodies": 8998,
+    "not_implemented": 11737,
     "original_declarations": 27332,
     "original_native_bodies": 25897,
-    "unresolved_identities": 1502,
-    "withheld_bodies": 3634
+    "unresolved_identities": 1506,
+    "withheld_bodies": 3656
   }
 }

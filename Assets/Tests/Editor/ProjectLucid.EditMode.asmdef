@@ -19,7 +19,8 @@
     "HLRTLTextMeshPro.Runtime",
     "Unity.TextMeshPro",
     "Unity.Addressables",
-    "Unity.ResourceManager"
+    "Unity.ResourceManager",
+    "HLBinders.Runtime"
   ],
   "includePlatforms": [
     "Editor"
