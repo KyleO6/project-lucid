@@ -1151,3 +1151,19 @@ EDITMODE_TESTS += (
     'ProjectLucid.Tests.OriginalHLNavigationTests.WholeNavigationDeclarationsRetainOriginalFieldsModesAndAccessors',
     'ProjectLucid.Tests.OriginalHLNavigationTests.OrdinaryNavigationPreservesZeroDefaultUndefinedModesAndValueCopies',
 )
+
+# Original number-formatting and UI-visibility Editor obligations.
+EDITMODE_TESTS += tuple("OriginalLanguageUtilsTests." + name for name in (
+    "LanguageUtilsRetainsWholeAuthoredTypeFieldsAndOrderedAnnotations",
+    "LanguageUtilsRetainsWholeOverloadsPrivateInstanceLeavesAndTypedDefaults",
+    "LanguageUtilsInactiveConstructionRetainsOriginalNoneAndNullCaches",
+    "LanguageUtilsOwnedAbbreviationRetainsSignedStrictThresholdsAndNullOutputs",
+    "LanguageUtilsOwnedAbbreviationRetainsNonfiniteAndSignedZeroResults",
+))
+EDITMODE_TESTS += tuple("OriginalUIVisibilityControllerTests." + name for name in (
+    "InputVisibilityRetainsCompleteAuthoredFieldsMethodsAndOrderedOptions",
+    "PlatformVisibilityRetainsCompleteAuthoredBindingAndUnconditionalStartDeclaration",
+    "InputVisibilityNaturalCaptureRetainsWholeCurrentRoleWithoutQueuedCallbackExecution",
+    "InputVisibilityInactiveOwnedBindingsRoundTripWithoutBridgeOrSubscription",
+    "PlatformVisibilityInactiveOwnedBindingRoundTripsWithoutActivatingOverrides",
+))
