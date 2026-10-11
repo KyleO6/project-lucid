@@ -1214,3 +1214,7 @@ EDITMODE_TESTS += (
     'OriginalAssetReferenceProfileTests.OwnedRealAssetAssignmentPreservesGuidAndTrueEditorFlagThroughSerialization',
     'OriginalAssetReferenceProfileTests.OwnedPublicNullClearSetsEditorFlagAndClearsGuidAndSubObjectName',
 )
+
+EDITMODE_TESTS += (
+    'OriginalStringFormatterOwnedBindingTests.InactiveOriginalFormatterReadsSerializedOutputReferencesAndPublicRetarget',
+)
