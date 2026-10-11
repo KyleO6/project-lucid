@@ -375,6 +375,18 @@ EDITMODE_TESTS += (
     "ProjectLucid.Tests.OfflineAccessPointTests.UnavailableGeometryRemainsStableAfterRepeatedPresentationRequests",
 )
 
+EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalFontAssetLanguageTests." + name for name in (
+    "FontAuthoredDeclarationsRetainExactOriginalContracts",
+    "FontConfigurationNamingAndSerializationUseGenuineOwnedData",
+    "FontConfigurationNullCollectionAndEntryRetainPartialNamingFaults",
+    "FontStaticWaitEmptyListYieldsBeforeCompletionAndEarlyDisposeDoesNotPublish",
+    "FontStaticWaitBoxesInvalidHandlesAndPreservesNullFaultOrder",
+))
+EDITMODE_TESTS += (
+    "ProjectLucid.Tests.OriginalFontReadinessTransitionTests.FontReadinessTransitionRetainsOriginalFactoryAndPrivateOverrideContracts",
+    "ProjectLucid.Tests.OriginalFontReadinessTransitionTests.FontReadinessFactoryIgnoresJsonAndUsesTheGenuineOwnedTransitionRegistry",
+)
+
 PLAYMODE_TESTS = (
     "ProjectLucid.Tests.OfflineStartupTests.ReachesOriginalMainMenu",
     "ProjectLucid.Tests.LocalSaveSlotTests.CreateCopyDeleteAndRestart",

@@ -20,7 +20,8 @@
     "HLPhysics.Runtime",
     "HLUnityUI.Runtime",
     "Unity.Timeline",
-    "UnityEngine.UI"
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
