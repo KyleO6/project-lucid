@@ -1109,3 +1109,23 @@ EDITMODE_TESTS += (
     'ProjectLucid.Tests.OriginalRTLShapingTests.LigatureReversalAppendsAndPreservesTheOriginalScalarQuirk',
     'ProjectLucid.Tests.OriginalRTLShapingTests.WholePipelineDefaultsAndSuccessiveCallsUseGenuineSharedBuffers',
 )
+
+
+# Original selectable-family controlled Editor obligations.
+EDITMODE_TESTS += (
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.ButtonWholeDeclaredMembersKeepOriginalFlagsAndTypedSignatures',
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.ListenerWholeNaturalFamilyKeepsOriginalFlagsAndTypedSignatures',
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.InactiveButtonConstructsFiveIndependentMutableEvents',
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.InactivePublicActionsReturnBeforeNullEventsOrSoundRoutes',
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.InactiveAnimationDisabledPressReturnsFalseWithoutDispatch',
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.InactiveListenerReturnsGenuineObservedArrayWithoutSetup',
+    'ProjectLucid.Tests.OriginalHLButtonAndInputListenerTests.OrdinarySelectedButtonInputKeepsNullProviderAndZeroDefaults',
+    'ProjectLucid.Editor.OriginalUIUtilsTests.OriginalUIUtilsRetainsCompleteGenericDefaultAndAnnotationContracts',
+    'ProjectLucid.Editor.OriginalUIUtilsTests.OriginalFormattingUsesSingleConversionAndGenuineCultureProviders',
+    'ProjectLucid.Editor.OriginalUIUtilsTests.OriginalRefColourUsesExactChannelsAndRetainsManagedNaNBranch',
+    'ProjectLucid.Editor.OriginalUIUtilsTests.OriginalGenericSettersUseOwnedObjectEqualityDispatch',
+    'ProjectLucid.Editor.OriginalUIUtilsTests.OriginalVisualHelpersForwardToGenuineOwnedUnityComponents',
+    'ProjectLucid.Editor.OriginalUIUtilsTests.OriginalFrontPlaneProjectionUsesGenuineOwnedCamera',
+    'ProjectLucid.Tests.OriginalHLNavigationTests.WholeNavigationDeclarationsRetainOriginalFieldsModesAndAccessors',
+    'ProjectLucid.Tests.OriginalHLNavigationTests.OrdinaryNavigationPreservesZeroDefaultUndefinedModesAndValueCopies',
+)
