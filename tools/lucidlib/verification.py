@@ -1059,3 +1059,11 @@ EDITMODE_TESTS += (
     'OriginalGradientTests.OriginalGradientInactiveModifyMeshKeepsWholeTriangleStream',
     'OriginalGradientTests.OriginalGradientActiveModifyMeshReplacesColorAndUV1Only',
 )
+
+EDITMODE_TESTS += (
+    'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalEffectManagerRetainsWholeTwoOwnerDeclarations',
+    'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalInactiveEffectManagerRetainsDefaultsAndEmptyReferenceSetter',
+    'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalEffectManagerSamplesEighteenGenuineSerializedFiniteCurves',
+    'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalEffectManagerReturnsGenuineOwnedSerializedVisualValues',
+    'ProjectLucid.Editor.OriginalHLUIEffectManagerTests.OriginalAudioCueRoundTripsRawKeysAndEmptyManagerSuppressesDispatch',
+)
