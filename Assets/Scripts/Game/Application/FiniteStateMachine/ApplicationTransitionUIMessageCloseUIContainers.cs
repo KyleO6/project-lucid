@@ -13,6 +13,8 @@ namespace HardlightProject
 	public class ApplicationTransitionUIMessageCloseUIContainers : ApplicationTransitionUIMessage
 	{
 		[Serializable]
+		[Il2CppSetOption(Option.NullChecks, false)]
+		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 		protected new class JSONCtorArgs
 		{
 			[GraphUnityObject(typeof(UIModernEvent))]
