@@ -11,6 +11,8 @@ namespace HardlightProject
 	{
 		[Serializable]
 		[FiniteStateMachineJsonCtorArgs]
+		[Il2CppSetOption(Option.NullChecks, false)]
+		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 		protected class SettableJSONCtorArgs : BaseJSONCtorArgs
 		{
 			public bool SetOnEntry;

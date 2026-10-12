@@ -14,6 +14,8 @@ namespace HardlightProject
 	{
 		[Serializable]
 		[FiniteStateMachineJsonCtorArgs]
+		[Il2CppSetOption(Option.NullChecks, false)]
+		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 		protected class VelocityMagnitudeJSONCtorArgs
 		{
 			public float VelocityMagnitude;
