@@ -50,8 +50,18 @@ namespace Hardlight
 		// 060002f9 (1.10.1 RVA 0x1AB3360)
 		public static Rect Absolute(this Rect rect)
 		{
-			if (rect.width < 0f) { rect.x += rect.width; rect.width = -rect.width; }
-			if (rect.height < 0f) { rect.y += rect.height; rect.height = -rect.height; }
+			if (rect.xMin > rect.xMax)
+			{
+				float xMin = rect.xMin;
+				rect.xMin = rect.xMax;
+				rect.xMax = xMin;
+			}
+			if (rect.yMin > rect.yMax)
+			{
+				float yMin = rect.yMin;
+				rect.yMin = rect.yMax;
+				rect.yMax = yMin;
+			}
 			return rect;
 		}
 
