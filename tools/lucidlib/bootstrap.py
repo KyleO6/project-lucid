@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+import errno
 import hashlib
 import json
 import os
@@ -21,6 +23,10 @@ try:
     import fcntl
 except ImportError:  # Inspection/validation must still import on Windows.
     fcntl = None
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -83,6 +89,64 @@ def load_lock() -> dict:
     if lock.get("schema_version") != 1:
         raise ToolError("Unsupported tools/tool-lock.json schema")
     return lock
+
+
+def host_name() -> str:
+    return f"{platform.system().lower()}-{platform.machine().lower()}"
+
+
+def host_lock(lock: dict | None = None) -> dict:
+    """Resolve the pinned artifacts for this host; other hosts override only native tools."""
+    lock = load_lock() if lock is None else lock
+    host = host_name()
+    if host == lock["platform"]:
+        return {"platform": host, "rid": lock["rid"], "artifacts": lock["artifacts"]}
+    variant = lock.get("hosts", {}).get(host)
+    if variant is None:
+        supported = ", ".join([lock["platform"], *lock.get("hosts", {})])
+        raise ToolError(f"This lock currently supports {supported}; detected {host}")
+    return {"platform": host, "rid": variant["rid"], "artifacts": {**lock["artifacts"], **variant["artifacts"]}}
+
+
+def _windows_host() -> bool:
+    return os.name == "nt"
+
+
+def executable(path: Path) -> Path:
+    """Name a native executable as the host expects it."""
+    return path.with_name(path.name + ".exe") if _windows_host() else path
+
+
+# msvcrt.locking reports a region still held elsewhere with these errors;
+# LK_LOCK raises EDEADLOCK after its ten one-second attempts.
+_LOCK_CONTENTION = {getattr(errno, "EDEADLOCK", errno.EDEADLK), errno.EACCES}
+
+
+@contextmanager
+def exclusive_lock(stream):
+    """Hold a process-wide lock on an open file, waiting as long as necessary."""
+    if fcntl is not None:
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(stream, fcntl.LOCK_UN)
+        return
+    if msvcrt is None:
+        raise ToolError("This host has no supported file lock")
+    stream.seek(0)
+    while True:
+        try:
+            msvcrt.locking(stream.fileno(), msvcrt.LK_LOCK, 1)
+            break
+        except OSError as exc:
+            if exc.errno not in _LOCK_CONTENTION:
+                raise
+    try:
+        yield
+    finally:
+        stream.seek(0)
+        msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
 
 
 def _digest(path: Path, algorithm: str) -> str:
@@ -244,7 +308,7 @@ def dotnet_environment(work_dir: Path, dotnet_root: Path | None = None) -> dict:
 
 
 def _install(name: str, lock: dict, work_dir: Path) -> Path:
-    artifact = lock["artifacts"][name]
+    artifact = host_lock(lock)["artifacts"][name]
     destination = managed_path(work_dir, "tools", name)
     marker = managed_path(work_dir, "tools", name, "lucid-install.json")
     identity = {key: artifact[key] for key in ("version", "sha256", "sha512") if key in artifact}
@@ -280,12 +344,13 @@ def _ensure_cpp2il(lock: dict, work_dir: Path) -> dict:
     source = _install("cpp2il-source", lock, work_dir)
     output = managed_path(work_dir, "tools", "cpp2il")
     marker = managed_path(work_dir, "tools", "cpp2il", "lucid-build.json")
+    rid = host_lock(lock)["rid"]
     identity = {"commit": lock["artifacts"]["cpp2il-source"]["version"],
-                "sdk": lock["artifacts"]["dotnet"]["version"], "runtime": "osx-arm64",
+                "sdk": lock["artifacts"]["dotnet"]["version"], "runtime": rid,
                 "build_schema": 2}
-    executable = managed_path(work_dir, "tools", "cpp2il", "Cpp2IL")
-    if marker.is_file() and executable.is_file() and json.loads(marker.read_text()) == identity:
-        return {"status": "ready", "path": str(executable), "version": identity["commit"]}
+    program = executable(managed_path(work_dir, "tools", "cpp2il", "Cpp2IL"))
+    if marker.is_file() and program.is_file() and json.loads(marker.read_text()) == identity:
+        return {"status": "ready", "path": str(program), "version": identity["commit"]}
     replacing_owned_build = False
     if output.exists():
         previous = json.loads(marker.read_text()) if marker.is_file() else {}
@@ -296,14 +361,14 @@ def _ensure_cpp2il(lock: dict, work_dir: Path) -> dict:
     stage = managed_path(work_dir, "tools", f".build-cpp2il-{uuid.uuid4().hex}")
     try:
         process = run_logged([
-            str(dotnet_root / "dotnet"), "publish", str(source / "Cpp2IL" / "Cpp2IL.csproj"),
-            "-c", "Release", "-f", "net10.0", "-r", "osx-arm64", "--self-contained", "true",
+            str(executable(dotnet_root / "dotnet")), "publish", str(source / "Cpp2IL" / "Cpp2IL.csproj"),
+            "-c", "Release", "-f", "net10.0", "-r", rid, "--self-contained", "true",
             "-p:PublishSingleFile=true", "-p:PublishTrimmed=false", "-p:RestorePackagesWithLockFile=true",
             "-p:SourceRevisionId=" + identity["commit"],
             "-o", str(stage),
         ], work_dir, "cpp2il-build.log", timeout=1200,
             env=dotnet_environment(work_dir, dotnet_root), cwd=source)
-        if process["returncode"] or process["timed_out"] or not (stage / "Cpp2IL").is_file():
+        if process["returncode"] or process["timed_out"] or not executable(stage / "Cpp2IL").is_file():
             raise ToolError(f"Pinned Cpp2IL build failed; inspect {process['log']}")
         for filename in ("LICENSE", "nuget.config"):
             if (source / filename).is_file():
@@ -321,7 +386,7 @@ def _ensure_cpp2il(lock: dict, work_dir: Path) -> dict:
             raise
         if backup is not None:
             shutil.rmtree(backup)
-        return {"status": "ready", "path": str(executable), "version": identity["commit"], "build": process}
+        return {"status": "ready", "path": str(program), "version": identity["commit"], "build": process}
     finally:
         if stage.exists():
             shutil.rmtree(stage)
@@ -337,17 +402,15 @@ def bootstrap(work_dir: Path, selected=None) -> dict:
     allowed = {"assetripper", "cpp2il", "dumper", "dotnet", "runtime6"}
     if not selection or any(name not in allowed for name in selection):
         raise ValueError(f"Selected tools must be one of {', '.join(sorted(allowed))}")
-    host = f"{platform.system().lower()}-{platform.machine().lower()}"
-    if host != lock["platform"]:
-        raise ToolError(f"This lock currently supports {lock['platform']}; detected {host}")
+    pinned = host_lock(lock)
+    host = pinned["platform"]
     work_dir.mkdir(parents=True, exist_ok=True)
     tools = managed_path(work_dir, "tools")
     tools.mkdir(parents=True, exist_ok=True)
     result = {"status": "ready", "host": host, "tools": {}}
     for name in dict.fromkeys(selection):
         lock_path = managed_path(work_dir, "tools", f".{name}.lock")
-        with lock_path.open("a") as stream:
-            fcntl.flock(stream, fcntl.LOCK_EX)
+        with lock_path.open("a") as stream, exclusive_lock(stream):
             try:
                 if name == "cpp2il":
                     item = _ensure_cpp2il(lock, work_dir)
@@ -355,7 +418,7 @@ def bootstrap(work_dir: Path, selected=None) -> dict:
                     if name == "dumper":
                         _install("runtime6", lock, work_dir)
                     destination = _install(name, lock, work_dir)
-                    artifact = lock["artifacts"][name]
+                    artifact = pinned["artifacts"][name]
                     item = {"status": "ready", "path": str(destination / artifact["entrypoint"]),
                             "version": artifact["version"]}
                 result["tools"][name] = item

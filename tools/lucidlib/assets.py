@@ -23,6 +23,7 @@ from urllib import error, parse, request
 import uuid
 
 from .audio import normalize_audio
+from .bootstrap import ToolError, executable as native_executable, host_lock
 from .inspection import _manifest, sha256_file
 
 
@@ -133,10 +134,21 @@ def fingerprint_manifest(manifest: list[dict]) -> dict:
             "critical_files": {row["path"]: row["sha256"] for row in ordered if row["path"] in critical}}
 
 
-def _tool_lock() -> dict:
+def _pinned_tools() -> list[dict]:
+    """AssetRipper identities for every pinned host; this host's build comes first."""
     lock = json.loads((Path(__file__).resolve().parents[1] / "tool-lock.json").read_text())
-    tool = lock["artifacts"]["assetripper"]
-    return {"name": "AssetRipper", "version": tool["version"], "archive_sha256": tool["sha256"]}
+    pinned = [lock["artifacts"]["assetripper"]]
+    pinned += [host["artifacts"]["assetripper"] for host in lock.get("hosts", {}).values()
+               if "assetripper" in host["artifacts"]]
+    try:
+        pinned.insert(0, host_lock(lock)["artifacts"]["assetripper"])
+    except ToolError:
+        pass
+    return [{"name": "AssetRipper", "version": tool["version"], "archive_sha256": tool["sha256"]} for tool in pinned]
+
+
+def _tool_lock() -> dict:
+    return _pinned_tools()[0]
 
 
 def _validate_export_identity(report: dict) -> Path:
@@ -147,8 +159,9 @@ def _validate_export_identity(report: dict) -> Path:
     current = fingerprint_manifest(_manifest(app))
     if current != expected:
         raise ValueError("Supplied game content differs from the asset export; extract assets again")
-    tool = _tool_lock()
-    if any(report["tool"].get(key) != value for key, value in tool.items()) or report.get("settings") != EXPORT_SETTINGS:
+    # An export from any pinned host build is equivalent; a different version is not.
+    matches = any(all(report["tool"].get(key) == value for key, value in tool.items()) for tool in _pinned_tools())
+    if not matches or report.get("settings") != EXPORT_SETTINGS:
         raise ValueError("Asset export tool version/settings differ from this pipeline; extract assets again")
     return app
 
@@ -555,7 +568,7 @@ def extract_assets(input_path: Path, work_dir: Path) -> dict:
     """Run a full-app export in fresh quarantine; publish a pointer on success."""
     app = _resolve_app(input_path)
     work = _safe_work_dir(work_dir, app)
-    executable = work / "tools/assetripper/AssetRipper.GUI.Free"
+    executable = native_executable(work / "tools/assetripper/AssetRipper.GUI.Free")
     if not executable.is_file():
         raise FileNotFoundError(f"AssetRipper is missing at {executable}; run the bootstrap command first")
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
