@@ -13,6 +13,7 @@ import hashlib
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from lucidlib import assets
+from lucidlib.bootstrap import executable
 
 
 def write_asset(root, path, guid, contents="data"):
@@ -407,7 +408,7 @@ class AssetTests(unittest.TestCase):
         data = app / "Contents/Resources/Data"
         data.mkdir(parents=True)
         (data / "globalgamemanagers").write_bytes(b"Unity")
-        tool = self.work / "tools/assetripper/AssetRipper.GUI.Free"
+        tool = executable(self.work / "tools/assetripper/AssetRipper.GUI.Free")
         tool.parent.mkdir(parents=True)
         tool.write_text("synthetic")
         pointer = self.work / "assets/latest-assets.json"

@@ -10,7 +10,7 @@ import plistlib
 import re
 import uuid
 
-from .bootstrap import (ToolError, bootstrap, dotnet_environment, managed_path,
+from .bootstrap import (ToolError, bootstrap, dotnet_environment, executable, managed_path,
                         run_logged, validate_work_dir, write_json)
 from .inspection import sha256_file
 from .macho import inspect_macho
@@ -164,7 +164,7 @@ def _inspect_managed_output(directory: Path, work_dir: Path, run_id: str, *, sch
     project = managed_path(work_dir, "tools", "il-inspector", "RecoveryInspector.csproj")
     source_file = managed_path(work_dir, "tools", "il-inspector", "Program.cs")
     dotnet_root = managed_path(work_dir, "tools", "dotnet")
-    dotnet = dotnet_root / "dotnet"
+    dotnet = executable(dotnet_root / "dotnet")
     if not dotnet.is_file():
         raise ToolError("Native .NET 10 SDK is missing for managed-output inspection")
     env = dotnet_environment(work_dir, dotnet_root)
@@ -257,7 +257,7 @@ def _dumper(thin: Path, metadata: Path, work_dir: Path, run_id: str) -> dict:
     output = managed_path(work_dir, "recovery", run_id, "dumper")
     output.mkdir(parents=True, exist_ok=False)
     runtime = managed_path(work_dir, "tools", "runtime6")
-    process = run_logged([str(runtime / "dotnet"), item["path"], str(thin), str(metadata), str(output)],
+    process = run_logged([str(executable(runtime / "dotnet")), item["path"], str(thin), str(metadata), str(output)],
                          work_dir, f"dumper-{run_id}.log", timeout=300,
                          env=dotnet_environment(work_dir, runtime))
     files = _managed_files(output / "DummyDll")
