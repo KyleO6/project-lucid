@@ -50,6 +50,7 @@ namespace HardlightProject
 		{
 			base.DoOnLeave();
 			IsRollingTriggered = false;
+			IsRollingExiting = false;
 		}
 
 		// 060011c6 (1.10.1 RVA 0x74B390)

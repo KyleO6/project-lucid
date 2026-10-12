@@ -11,6 +11,8 @@ namespace HardlightProject
 	public abstract class CharacterAbilityDefinition_Climbing : CharacterAbilityDefinition
 	{
 		[Serializable]
+		[Il2CppSetOption(Option.NullChecks, false)]
+		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 		public class ClimbingLateralMotion
 		{
 			[Tooltip("Lateral acceleration, which is scaled by input magnitude.")]
@@ -32,6 +34,8 @@ namespace HardlightProject
 		}
 
 		[Serializable]
+		[Il2CppSetOption(Option.NullChecks, false)]
+		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 		public class ClimbingVerticalMotion
 		{
 			[Tooltip("Vertical acceleration, which is scaled by input magnitude.")]
