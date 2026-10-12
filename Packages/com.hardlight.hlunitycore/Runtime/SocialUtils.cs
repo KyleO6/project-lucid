@@ -12,7 +12,7 @@ namespace Hardlight.Utils
 		{
 			GetUserProfile(id, UserProfileCallback);
 
-			// token unknown (1.10.1 RVA 0x1B37020) (<>c__DisplayClass0_0.<GetUsername>g__UserProfileCallback|0)
+			// 06001256 (1.10.1 RVA 0x1B37020) (<>c__DisplayClass0_0.<GetUsername>g__UserProfileCallback|0)
 			void UserProfileCallback(IUserProfile userProfile)
 			{
 				nameCallback(userProfile != null ? userProfile.userName : null);
@@ -24,7 +24,7 @@ namespace Hardlight.Utils
 		{
 			Social.LoadUsers(ids, UserProfilesCallback);
 
-			// token unknown (1.10.1 RVA 0x1B370E0) (<>c__DisplayClass1_0.<GetUsernames>g__UserProfilesCallback|0)
+			// 06001258 (1.10.1 RVA 0x1B370E0) (<>c__DisplayClass1_0.<GetUsernames>g__UserProfilesCallback|0)
 			void UserProfilesCallback(IUserProfile[] userProfiles)
 			{
 				string[] names = new string[userProfiles.Length];
@@ -41,7 +41,7 @@ namespace Hardlight.Utils
 		{
 			Social.LoadUsers(new string[] { id }, UserProfileCallback);
 
-			// token unknown (1.10.1 RVA 0x1B372C0) (<>c__DisplayClass2_0.<GetUserProfile>g__UserProfileCallback|0)
+			// 0600125a (1.10.1 RVA 0x1B372C0) (<>c__DisplayClass2_0.<GetUserProfile>g__UserProfileCallback|0)
 			void UserProfileCallback(IUserProfile[] profiles)
 			{
 				userCallback(profiles.Length > 0 ? profiles[0] : null);

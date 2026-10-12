@@ -2,8 +2,8 @@ using System;
 
 namespace Hardlight
 {
-	[Serializable]
 	// Original HLUnityCore.Runtime 02000166; bodies translated from the 1.10.1 x86-64 binary.
+	[Serializable]
 	public sealed class VersionAPI
 	{
 		public int L;

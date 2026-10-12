@@ -23,10 +23,13 @@ namespace Hardlight
 		public static T BestMatch<T>(IEnumerable<T> list, Func<T, int> comparison)
 		{
 			T result = default(T);
-			int best = int.MaxValue;
+			uint best = int.MaxValue;
 			foreach (T item in list)
 			{
-				int score = Math.Abs(comparison(item));
+				// Native magnitude: unchecked negate-if-negative compared unsigned, so int.MinValue (0x80000000)
+				// never beats the int.MaxValue start and no OverflowException is raised.
+				int value = comparison(item);
+				uint score = (uint)(value < 0 ? unchecked(-value) : value);
 				if (score < best)
 				{
 					result = item;
