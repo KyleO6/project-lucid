@@ -12,7 +12,7 @@ namespace HardlightProject
 		// 06003355 (1.10.1 RVA 0x637200)
 		public UIContainerRanksParameters(MissionDefinition missionDefinition, ChallengeDefinition challengeDefinition)
 		{
-			this = default;
+			MissionDefinition = missionDefinition;
 			ChallengeDefinition = challengeDefinition;
 		}
 	}

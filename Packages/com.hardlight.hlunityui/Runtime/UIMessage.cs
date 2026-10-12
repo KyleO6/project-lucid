@@ -9,7 +9,7 @@ namespace Hardlight
 		// 0600037e (1.10.1 RVA 0x1B54110)
 		public UIMessage(UIEventType type)
 		{
-			this = default;
+			Type = type;
 			// (no initialisers)
 		}
 	}
