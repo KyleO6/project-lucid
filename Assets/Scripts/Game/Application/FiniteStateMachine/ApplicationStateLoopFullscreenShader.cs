@@ -47,9 +47,10 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationStateLoopFullscreenShader(fsm, stateId,
-				EnumUtilities.Parse<FullscreenShaderParametersType>(args.StartShaderType), args.StartShaderDuration,
-				EnumUtilities.Parse<FullscreenShaderParametersType>(args.LoopShaderType));
+			FullscreenShaderParametersType startShaderType = EnumUtilities.Parse<FullscreenShaderParametersType>(args.StartShaderType);
+			float startShaderDuration = args.StartShaderDuration;
+			FullscreenShaderParametersType loopShaderType = EnumUtilities.Parse<FullscreenShaderParametersType>(args.LoopShaderType);
+			return new ApplicationStateLoopFullscreenShader(fsm, stateId, startShaderType, startShaderDuration, loopShaderType);
 		}
 
 		// 060006d7 (1.10.1 RVA 0x64C490)
@@ -60,8 +61,8 @@ namespace HardlightProject
 			FullscreenShaderManager.ParametersHandle handle = default;
 			shaderManager.StartEffectOverride(m_startShaderType, out handle, m_startShaderDuration, true, false, () =>
 			{
-				shaderManager.StartEffectOverride(m_loopShaderType, out FullscreenShaderManager.ParametersHandle loopHandle, 0f, false, true);
-				user.Storage.SetValue(FSMStorageKeys.ShaderOverride, loopHandle);
+				shaderManager.StartEffectOverride(m_loopShaderType, out _, 0f, false, true);
+				user.Storage.RemoveValue<FullscreenShaderManager.ParametersHandle>(FSMStorageKeys.ShaderOverride);
 			});
 			user.Storage.SetValue(FSMStorageKeys.ShaderOverride, handle);
 		}

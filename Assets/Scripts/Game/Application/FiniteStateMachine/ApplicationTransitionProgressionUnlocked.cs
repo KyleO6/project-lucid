@@ -42,10 +42,10 @@ namespace HardlightProject
 		public static IFSMTransition ConstructInstance(FiniteStateMachine fsm, FSMIdentifier transitionId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			List<PlayerProgressionTypes> progressions = new List<PlayerProgressionTypes>(args.Progressions.Count);
+			List<PlayerProgressionTypes> progressions = new List<PlayerProgressionTypes>();
 			foreach (string progression in args.Progressions)
 			{
-				progressions.Add((PlayerProgressionTypes)Enum.Parse(typeof(PlayerProgressionTypes), progression, true));
+				progressions.Add(EnumUtilities.Parse<PlayerProgressionTypes>(progression));
 			}
 			return new ApplicationTransitionProgressionUnlocked(fsm, transitionId, args.TrueWhenUnlocked, progressions);
 		}

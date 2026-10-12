@@ -50,11 +50,12 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			PauseTimeMode mode = (PauseTimeMode)Enum.Parse(typeof(PauseTimeMode), args.Mode, true);
-			List<TimeCategory> categories = new List<TimeCategory>(args.Categories.Count);
+			PauseTimeMode mode = EnumUtilities.Parse<PauseTimeMode>(args.Mode);
+			List<TimeCategory> categories = new List<TimeCategory>();
 			foreach (string category in args.Categories)
 			{
-				categories.Add((TimeCategory)Enum.Parse(typeof(TimeCategory), category, true));
+				Enum.TryParse<TimeCategory>(category, out TimeCategory value);
+				categories.Add(value);
 			}
 			return new ApplicationStatePauseTime(fsm, stateId, mode, categories);
 		}

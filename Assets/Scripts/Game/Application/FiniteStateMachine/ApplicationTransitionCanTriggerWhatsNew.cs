@@ -55,7 +55,7 @@ namespace Hardlight
 				&& !(versionDefinition.WhatsNewContainerIdentifier == null)
 				&& versionDefinition.MeetsAllRequirements())
 			{
-				string gameVersion = saveManager.CurrentSave.GameVersion;
+				string gameVersion = saveManager.GetSaveDataSettings().LastWhatsNewVersion;
 				canTrigger = string.IsNullOrWhiteSpace(gameVersion) || new Hardlight.Utils.Version(gameVersion) < versionDefinition.Version;
 			}
 			return canTrigger == m_trueCausesTransition;
