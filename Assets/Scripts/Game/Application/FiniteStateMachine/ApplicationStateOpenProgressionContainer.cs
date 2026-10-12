@@ -43,12 +43,13 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			List<PlayerProgressionTypes> progressions = new List<PlayerProgressionTypes>(args.Progressions.Count);
+			UIContainerIdentifier container = UIContainerIdentifier.FindByName(args.Container);
+			List<PlayerProgressionTypes> progressions = new List<PlayerProgressionTypes>();
 			foreach (string progression in args.Progressions)
 			{
 				progressions.Add(EnumUtilities.Parse<PlayerProgressionTypes>(progression));
 			}
-			return new ApplicationStateOpenProgressionContainer(fsm, stateId, UIContainerIdentifier.FindByName(args.Container), progressions);
+			return new ApplicationStateOpenProgressionContainer(fsm, stateId, container, progressions);
 		}
 
 		// 060006e5 (1.10.1 RVA 0x64D0A0)

@@ -51,7 +51,9 @@ namespace HardlightProject
 		public static IFSMTransition ConstructInstance(FiniteStateMachine fsm, FSMIdentifier transitionId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationTransitionIsContainerOpen(fsm, transitionId, UIContainerIdentifier.FindByName(args.Container), (Comparison)Enum.Parse(typeof(Comparison), args.Compare, true));
+			Comparison compare = (Comparison)Enum.Parse(typeof(Comparison), args.Compare, true);
+			UIContainerIdentifier container = UIContainerIdentifier.FindByName(args.Container);
+			return new ApplicationTransitionIsContainerOpen(fsm, transitionId, container, compare);
 		}
 
 		// 0600085d (1.10.1 RVA 0x664050)
