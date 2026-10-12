@@ -26,7 +26,7 @@ namespace HardlightProject
 
 			public bool WaitAtMidpoint;
 
-			public bool QueueIfTransitionInProgress;
+			public bool QueueIfTransitionInProgress = true;
 
 			// 06000760 (1.10.1 RVA 0x654C70)
 			public JSONCtorArgs()

@@ -67,6 +67,10 @@ namespace HardlightProject
 				if (_003C_003E1__state == 1)
 				{
 					_003C_003E1__state = -1;
+					if (saveManager.NewAppVersionRequired)
+					{
+						return false;
+					}
 					_003C_003E2__current = saveManager.OpenSave();
 					_003C_003E1__state = 2;
 					return true;
@@ -106,7 +110,7 @@ namespace HardlightProject
 		// 06000695 (1.10.1 RVA 0x648C00)
 		protected override void DoOnEnter(IGraphUser user, FSMStateChangeAction action)
 		{
-			Social.localUser.Authenticate(_ => { });
+			Social.localUser.Authenticate(loginSuccess => ProcessManager.GetSystemRef<GameCenter>().InvokeOnValid(gameCenter => gameCenter.OnLoginComplete(loginSuccess)));
 			user.GetAs<App>().DataManager.LoadDefinitionData();
 			CoroutineUtils.RunCoroutine(InitialiseSaveData(ProcessManager.GetSystem<SaveManager>(), user));
 		}

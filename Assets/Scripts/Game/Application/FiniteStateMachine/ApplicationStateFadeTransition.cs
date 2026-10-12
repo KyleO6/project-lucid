@@ -74,9 +74,11 @@ namespace HardlightProject
 			base.DoOnEnter(user, action);
 			App app = user.GetAs<App>();
 			FadeTransitionParameters fadeParameters = app.Storage.GetValue<FadeTransitionParameters>(AppFSMKeys.TransitionFadeParameters, null, true);
-			if (ProcessManager.GetSystem<DataManager>().FadeTransitionDefinitions.TryGetValue(fadeParameters.Type, out FadeTransitionDefinition definition))
+			UIScreenTransitionManager transitionManager = ProcessManager.GetSystem<UIScreenTransitionManager>();
+			DataManager dataManager = ProcessManager.GetSystem<DataManager>();
+			if (dataManager.FadeTransitionDefinitions.TryGetValue(fadeParameters.Type, out FadeTransitionDefinition definition))
 			{
-				ProcessManager.GetSystem<UIScreenTransitionManager>().QueueTransition(definition.ContainerIdentifier,
+				transitionManager.QueueTransition(definition.ContainerIdentifier,
 					() => Midpoint(user, fadeParameters.OnMidpointCallback), () => PublishMessage(user));
 			}
 		}
