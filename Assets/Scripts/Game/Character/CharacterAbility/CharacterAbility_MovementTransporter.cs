@@ -10,7 +10,7 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class CharacterAbility_MovementTransporter : CharacterAbility_MovementTracker<CharacterAbilityDefinition_MovementTransporter, TransporterDefinition>
 	{
-		private readonly AudioManager m_audioManager;
+		private readonly AudioManager m_audioManager = ProcessManager.GetSystem<AudioManager>();
 
 		// 060011b9 (1.10.1 RVA 0x74AF10)
 		protected override TransporterDefinition GetTrackerDefinition()
@@ -35,7 +35,6 @@ namespace HardlightProject
 		// 060011bc (1.10.1 RVA 0x74B020)
 		public CharacterAbility_MovementTransporter()
 		{
-			m_audioManager = ProcessManager.GetSystem<AudioManager>();
 		}
 	}
 }
