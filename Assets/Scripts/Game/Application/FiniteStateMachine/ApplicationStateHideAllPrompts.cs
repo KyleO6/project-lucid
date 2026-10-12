@@ -38,7 +38,8 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationStateHideAllPrompts(fsm, (string)stateId, args.SuppressPrompts);
+			bool suppressPrompts = args.SuppressPrompts;
+			return new ApplicationStateHideAllPrompts(fsm, (string)stateId, suppressPrompts);
 		}
 
 		// 06000670 (1.10.1 RVA 0x646BB0)
