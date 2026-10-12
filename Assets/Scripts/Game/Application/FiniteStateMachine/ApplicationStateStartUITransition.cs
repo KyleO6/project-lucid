@@ -68,8 +68,8 @@ namespace HardlightProject
 		// 0600075b (1.10.1 RVA 0x6546D0)
 		private ApplicationStateStartUITransition(FiniteStateMachine fsm, string stateName, ApplicationStateEvent eventOnMidpoint, UIContainerIdentifier transitionContainerId, bool waitAtMidpoint, bool queueIfTransitionInProgress) : base(fsm, stateName)
 		{
-			m_eventOnMidpoint = eventOnMidpoint;
 			m_transitionContainerId = transitionContainerId;
+			m_eventOnMidpoint = eventOnMidpoint;
 			m_waitAtMidpoint = waitAtMidpoint;
 			m_queueIfTransitionInProgress = queueIfTransitionInProgress;
 		}
@@ -80,7 +80,9 @@ namespace HardlightProject
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
 			ApplicationStateEvent eventOnMidpoint = ApplicationStateEvent.FindByName(args.EventOnMidpoint);
 			UIContainerIdentifier transitionContainer = string.IsNullOrEmpty(args.TransitionContainer) ? null : UIContainerIdentifier.FindByName(args.TransitionContainer);
-			return new ApplicationStateStartUITransition(fsm, stateId, eventOnMidpoint, transitionContainer, args.WaitAtMidpoint, args.QueueIfTransitionInProgress);
+			bool waitAtMidpoint = args.WaitAtMidpoint;
+			bool queueIfTransitionInProgress = args.QueueIfTransitionInProgress;
+			return new ApplicationStateStartUITransition(fsm, stateId, eventOnMidpoint, transitionContainer, waitAtMidpoint, queueIfTransitionInProgress);
 		}
 
 		// 0600075d (1.10.1 RVA 0x654860)
