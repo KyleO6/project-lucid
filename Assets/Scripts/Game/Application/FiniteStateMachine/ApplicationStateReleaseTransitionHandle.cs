@@ -19,7 +19,8 @@ namespace HardlightProject
 		// 0600073d (1.10.1 RVA 0x652E10)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
-			return new ApplicationStateReleaseTransitionHandle(fsm, (string)stateId, JsonUtility.FromJson<TriggerJSONCtorArgs>(jsonCtorArgs));
+			TriggerJSONCtorArgs args = JsonUtility.FromJson<TriggerJSONCtorArgs>(jsonCtorArgs);
+			return new ApplicationStateReleaseTransitionHandle(fsm, (string)stateId, args);
 		}
 
 		// 0600073e (1.10.1 RVA 0x652EC0)

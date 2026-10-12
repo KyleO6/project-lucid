@@ -41,7 +41,8 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationStateEnableUIContainer(fsm, stateId, UIContainerIdentifier.FindByName(args.Container), args.Enable);
+			UIContainerIdentifier container = UIContainerIdentifier.FindByName(args.Container);
+			return new ApplicationStateEnableUIContainer(fsm, stateId, container, args.Enable);
 		}
 
 		// 06000656 (1.10.1 RVA 0x644E80)

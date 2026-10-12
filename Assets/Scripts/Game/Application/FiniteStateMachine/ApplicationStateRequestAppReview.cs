@@ -37,7 +37,8 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier transitionId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationStateRequestAppReview(fsm, transitionId, ObjectUtils.FindByName<AppRatingRequesterBase>(args.Requester));
+			AppRatingRequesterBase requester = ObjectUtils.FindByName<AppRatingRequesterBase>(args.Requester);
+			return new ApplicationStateRequestAppReview(fsm, transitionId, requester);
 		}
 
 		// 06000745 (1.10.1 RVA 0x653650)

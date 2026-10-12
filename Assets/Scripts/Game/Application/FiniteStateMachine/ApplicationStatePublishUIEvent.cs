@@ -36,7 +36,8 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier transitionId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationStatePublishUIEvent(fsm, (string)transitionId, UIModernEvent.FindByName(args.EventId));
+			UIModernEvent eventId = UIModernEvent.FindByName(args.EventId);
+			return new ApplicationStatePublishUIEvent(fsm, (string)transitionId, eventId);
 		}
 
 		// 0600073a (1.10.1 RVA 0x652D20)
