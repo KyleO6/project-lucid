@@ -49,7 +49,9 @@ namespace HardlightProject
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
 			UIContainerIdentifier container = UIContainerIdentifier.FindByName(args.Container);
-			return new ApplicationStateSetActiveUIContainer(fsm, stateId, container, args.Active, args.CreateIfDoesNotExist);
+			bool active = args.Active;
+			bool createIfDoesNotExist = args.CreateIfDoesNotExist;
+			return new ApplicationStateSetActiveUIContainer(fsm, stateId, container, active, createIfDoesNotExist);
 		}
 
 		// 06000755 (1.10.1 RVA 0x654490)
