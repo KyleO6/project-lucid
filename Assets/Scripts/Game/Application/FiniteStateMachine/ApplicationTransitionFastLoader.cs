@@ -23,7 +23,8 @@ namespace HardlightProject
 
 		// 06000849 (1.10.1 RVA 0x663310)
 		protected override void DoOnEnter(IGraphUser user, FSMStateChangeAction action)
-		{;}
+		{
+		}
 
 		// 0600084a (1.10.1 RVA 0x663320)
 		protected override bool DoUpdate(IGraphUser user, FSMUpdateContext updateContext)

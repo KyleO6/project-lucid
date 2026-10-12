@@ -1,5 +1,4 @@
 using Unity.IL2CPP.CompilerServices;
-using System;
 using System.Collections.Generic;
 using Hardlight;
 
@@ -13,7 +12,8 @@ namespace HardlightProject
 	{
 		// 0600078a (1.10.1 RVA 0x657440)
 		protected ApplicationStateFTUESetup(FiniteStateMachine fsm, FSMIdentifier stateId) : base(fsm, stateId)
-		{;}
+		{
+		}
 
 		// 0600078b (1.10.1 RVA 0x657450)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

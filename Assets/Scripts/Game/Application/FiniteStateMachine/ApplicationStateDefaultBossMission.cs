@@ -1,7 +1,5 @@
 using Unity.IL2CPP.CompilerServices;
-using System.Collections.Generic;
 using Hardlight;
-using UnityEngine;
 
 namespace HardlightProject
 {
@@ -13,7 +11,8 @@ namespace HardlightProject
 	{
 		// 060007e5 (1.10.1 RVA 0x65E8E0)
 		protected ApplicationStateDefaultBossMission(FiniteStateMachine fsm, FSMIdentifier stateId) : base(fsm, stateId)
-		{;}
+		{
+		}
 
 		// 060007e6 (1.10.1 RVA 0x65E8F0)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

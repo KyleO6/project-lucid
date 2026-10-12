@@ -12,12 +12,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateEnableOutroRenderScale : FSMState
 	{
-		private readonly SystemRef<VisualQualityManager_SDT> m_visualQualityManagerRef;
+		private readonly SystemRef<VisualQualityManager_SDT> m_visualQualityManagerRef = ProcessManager.GetSystemRef<VisualQualityManager_SDT>();
 
 		// 06000804 (1.10.1 RVA 0x6600F0)
 		public ApplicationStateEnableOutroRenderScale(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
 		{
-			m_visualQualityManagerRef = ProcessManager.GetSystemRef<VisualQualityManager_SDT>();
 		}
 
 		// 06000805 (1.10.1 RVA 0x660190)

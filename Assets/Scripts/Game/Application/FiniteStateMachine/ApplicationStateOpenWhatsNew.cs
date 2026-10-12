@@ -10,18 +10,15 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateOpenWhatsNew : FSMState
 	{
-		private readonly SystemRef<UIManager> m_uiManagerRef;
+		private readonly SystemRef<UIManager> m_uiManagerRef = ProcessManager.GetSystemRef<UIManager>();
 
-		private readonly SystemRef<DataManager> m_dataManagerRef;
+		private readonly SystemRef<DataManager> m_dataManagerRef = ProcessManager.GetSystemRef<DataManager>();
 
-		private readonly SystemRef<SaveManager> m_saveManagerRef;
+		private readonly SystemRef<SaveManager> m_saveManagerRef = ProcessManager.GetSystemRef<SaveManager>();
 
 		// 060006f0 (1.10.1 RVA 0x64E4D0)
 		private ApplicationStateOpenWhatsNew(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
 		{
-			m_uiManagerRef = ProcessManager.GetSystemRef<UIManager>();
-			m_dataManagerRef = ProcessManager.GetSystemRef<DataManager>();
-			m_saveManagerRef = ProcessManager.GetSystemRef<SaveManager>();
 		}
 
 		// 060006f1 (1.10.1 RVA 0x64E5E0)

@@ -9,12 +9,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationTransitionGameCenterLoginComplete : FSMTransition
 	{
-		private readonly SystemRef<GameCenter> m_gameCenterRef;
+		private readonly SystemRef<GameCenter> m_gameCenterRef = ProcessManager.GetSystemRef<GameCenter>();
 
 		// 06000851 (1.10.1 RVA 0x663890)
 		public ApplicationTransitionGameCenterLoginComplete(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			m_gameCenterRef = ProcessManager.GetSystemRef<GameCenter>();
 		}
 
 		// 06000852 (1.10.1 RVA 0x663930)
