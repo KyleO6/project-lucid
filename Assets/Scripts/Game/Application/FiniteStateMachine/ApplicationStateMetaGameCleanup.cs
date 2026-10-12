@@ -11,7 +11,8 @@ namespace HardlightProject
 	{
 		// 060007d0 (1.10.1 RVA 0x65BC50)
 		private ApplicationStateMetaGameCleanup(FiniteStateMachine fsm, FSMIdentifier stateId) : base(fsm, stateId)
-		{;}
+		{
+		}
 
 		// 060007d1 (1.10.1 RVA 0x65BC60)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

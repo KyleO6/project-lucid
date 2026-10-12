@@ -9,12 +9,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationTransitionCutsceneLeadsToGameplay : FSMTransition
 	{
-		private readonly SystemRef<CutsceneManager> m_cutsceneManagerRef;
+		private readonly SystemRef<CutsceneManager> m_cutsceneManagerRef = ProcessManager.GetSystemRef<CutsceneManager>();
 
 		// 06000834 (1.10.1 RVA 0x662660)
 		public ApplicationTransitionCutsceneLeadsToGameplay(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			m_cutsceneManagerRef = ProcessManager.GetSystemRef<CutsceneManager>();
 		}
 
 		// 06000835 (1.10.1 RVA 0x662700)

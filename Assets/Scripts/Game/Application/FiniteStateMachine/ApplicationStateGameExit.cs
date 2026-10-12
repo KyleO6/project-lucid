@@ -9,12 +9,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateGameExit : FSMState
 	{
-		private readonly SystemRef<SaveManager> m_saveManagerRef;
+		private readonly SystemRef<SaveManager> m_saveManagerRef = ProcessManager.GetSystemRef<SaveManager>();
 
 		// 06000664 (1.10.1 RVA 0x645B20)
 		public ApplicationStateGameExit(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
 		{
-			m_saveManagerRef = ProcessManager.GetSystemRef<SaveManager>();
 		}
 
 		// 06000665 (1.10.1 RVA 0x645BC0)

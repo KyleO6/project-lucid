@@ -11,7 +11,8 @@ namespace HardlightProject
 	{
 		// 060006db (1.10.1 RVA 0x64C940)
 		protected ApplicationStateMissionSetup(FiniteStateMachine fsm, FSMIdentifier stateId) : base(fsm, stateId)
-		{;}
+		{
+		}
 
 		// 060006dc (1.10.1 RVA 0x64C950)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

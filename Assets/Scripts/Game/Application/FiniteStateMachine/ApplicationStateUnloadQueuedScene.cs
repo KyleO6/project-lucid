@@ -1,7 +1,6 @@
 using Unity.IL2CPP.CompilerServices;
 using System.Collections.Generic;
 using Hardlight;
-using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
@@ -15,7 +14,8 @@ namespace HardlightProject
 	{
 		// 0600076f (1.10.1 RVA 0x655230)
 		private ApplicationStateUnloadQueuedScene(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
-		{;}
+		{
+		}
 
 		// 06000770 (1.10.1 RVA 0x655260)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

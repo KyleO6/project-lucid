@@ -9,12 +9,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateEnableGameplayRenderScale : FSMState
 	{
-		private readonly SystemRef<VisualQualityManager_SDT> m_visualQualityManagerRef;
+		private readonly SystemRef<VisualQualityManager_SDT> m_visualQualityManagerRef = ProcessManager.GetSystemRef<VisualQualityManager_SDT>();
 
 		// 060007fe (1.10.1 RVA 0x65FD80)
 		public ApplicationStateEnableGameplayRenderScale(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
 		{
-			m_visualQualityManagerRef = ProcessManager.GetSystemRef<VisualQualityManager_SDT>();
 		}
 
 		// 060007ff (1.10.1 RVA 0x65FE20)

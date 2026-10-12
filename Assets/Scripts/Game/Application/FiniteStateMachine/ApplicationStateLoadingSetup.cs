@@ -12,7 +12,8 @@ namespace HardlightProject
 	{
 		// 060007cd (1.10.1 RVA 0x65AF50)
 		protected ApplicationStateLoadingSetup(FiniteStateMachine fsm, FSMIdentifier stateId) : base(fsm, stateId)
-		{;}
+		{
+		}
 
 		// 060007ce (1.10.1 RVA 0x65AF60)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
@@ -34,18 +35,16 @@ namespace HardlightProject
 			{
 				GameplayLevelDefinition ftueLevel = levelManager.GetDefaultProductionLevel();
 				IReadOnlyDictionary<MissionDefinition, SaveDataLevelMission> missionSaveData = missionManager.GetMissionSaveDataForLevel(ftueLevel);
-				if (ftueLevel.TryGetMissionGroups(out IReadOnlyList<MissionGroup> groups))
+				ftueLevel.TryGetMissionGroups(out IReadOnlyList<MissionGroup> groups);
+				foreach (MissionGroup group in groups)
 				{
-					foreach (MissionGroup group in groups)
+					if (!group.HideOrbCountUntilUnlocked || group.MeetsAllRequirements(ftueLevel))
 					{
-						if (!group.HideOrbCountUntilUnlocked || group.MeetsAllRequirements(ftueLevel))
+						foreach (MissionDefinition mission in group.Definitions)
 						{
-							foreach (MissionDefinition mission in group.Definitions)
+							if (mission.IsReachGoalTracker)
 							{
-								if (mission.IsReachGoalTracker)
-								{
-									missionSaveData[mission].MarkComplete(mission.TargetObjectivesToComplete);
-								}
+								missionSaveData[mission].MarkComplete(mission.TargetObjectivesToComplete);
 							}
 						}
 					}

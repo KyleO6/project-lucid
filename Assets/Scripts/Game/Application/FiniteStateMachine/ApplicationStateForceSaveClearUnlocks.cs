@@ -1,5 +1,4 @@
 using Unity.IL2CPP.CompilerServices;
-using System;
 using System.Collections.Generic;
 using Hardlight;
 
@@ -13,7 +12,8 @@ namespace HardlightProject
 	{
 		// 06000661 (1.10.1 RVA 0x645680)
 		public ApplicationStateForceSaveClearUnlocks(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
-		{;}
+		{
+		}
 
 		// 06000662 (1.10.1 RVA 0x6456B0)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

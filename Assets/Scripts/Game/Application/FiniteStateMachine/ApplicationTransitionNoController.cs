@@ -12,12 +12,11 @@ namespace Hardlight
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public sealed class ApplicationTransitionNoController : FSMTransition
 	{
-		private readonly SystemRef<CutsceneManager> m_cutsceneManagerRef;
+		private readonly SystemRef<CutsceneManager> m_cutsceneManagerRef = ProcessManager.GetSystemRef<CutsceneManager>();
 
 		// 06000020 (1.10.1 RVA 0x507390)
 		private ApplicationTransitionNoController(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			m_cutsceneManagerRef = ProcessManager.GetSystemRef<CutsceneManager>();
 		}
 
 		// 06000021 (1.10.1 RVA 0x507430)

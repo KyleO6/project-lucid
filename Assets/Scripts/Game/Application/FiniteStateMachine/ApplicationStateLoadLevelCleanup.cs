@@ -11,7 +11,8 @@ namespace HardlightProject
 	{
 		// 0600078e (1.10.1 RVA 0x657D20)
 		protected ApplicationStateLoadLevelCleanup(FiniteStateMachine fsm, FSMIdentifier stateId) : base(fsm, stateId)
-		{;}
+		{
+		}
 
 		// 0600078f (1.10.1 RVA 0x657D30)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

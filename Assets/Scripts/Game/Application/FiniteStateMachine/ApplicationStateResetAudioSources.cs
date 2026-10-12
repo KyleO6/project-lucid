@@ -11,7 +11,8 @@ namespace HardlightProject
 	{
 		// 06000747 (1.10.1 RVA 0x653750)
 		public ApplicationStateResetAudioSources(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
-		{;}
+		{
+		}
 
 		// 06000748 (1.10.1 RVA 0x653780)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

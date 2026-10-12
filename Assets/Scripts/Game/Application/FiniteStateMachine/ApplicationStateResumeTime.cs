@@ -1,6 +1,5 @@
 using Unity.IL2CPP.CompilerServices;
 using Hardlight;
-using UnityEngine;
 
 namespace HardlightProject
 {
@@ -12,7 +11,8 @@ namespace HardlightProject
 	{
 		// 0600074d (1.10.1 RVA 0x653B00)
 		public ApplicationStateResumeTime(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
-		{;}
+		{
+		}
 
 		// 0600074e (1.10.1 RVA 0x653B30)
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)

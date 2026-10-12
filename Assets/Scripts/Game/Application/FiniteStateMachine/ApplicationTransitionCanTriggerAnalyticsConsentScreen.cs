@@ -10,12 +10,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationTransitionCanTriggerAnalyticsConsentScreen : FSMTransition
 	{
-		private readonly SystemRef<AnalyticsConsentManager> m_consentManagerRef;
+		private readonly SystemRef<AnalyticsConsentManager> m_consentManagerRef = ProcessManager.GetSystemRef<AnalyticsConsentManager>();
 
 		// 06000831 (1.10.1 RVA 0x6624A0)
 		public ApplicationTransitionCanTriggerAnalyticsConsentScreen(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			m_consentManagerRef = ProcessManager.GetSystemRef<AnalyticsConsentManager>();
 		}
 
 		// 06000832 (1.10.1 RVA 0x662540)

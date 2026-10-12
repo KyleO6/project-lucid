@@ -22,7 +22,8 @@ namespace HardlightProject
 
 			// 060008ae (1.10.1 RVA 0x667940)
 			public JSONCtorArgs()
-			{;}
+			{
+			}
 		}
 
 		private readonly List<UIModernEvent> m_eventId;

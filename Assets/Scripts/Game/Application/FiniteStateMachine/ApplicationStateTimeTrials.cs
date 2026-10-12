@@ -9,12 +9,11 @@ namespace HardlightProject
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateTimeTrials : FSMState
 	{
-		private readonly SystemRef<TimeTrialLeaderboardManager> m_timeTrialLeaderboardManagerRef;
+		private readonly SystemRef<TimeTrialLeaderboardManager> m_timeTrialLeaderboardManagerRef = ProcessManager.GetSystemRef<TimeTrialLeaderboardManager>();
 
 		// 06000764 (1.10.1 RVA 0x654D20)
 		public ApplicationStateTimeTrials(FiniteStateMachine fsm, string stateName) : base(fsm, stateName)
 		{
-			m_timeTrialLeaderboardManagerRef = ProcessManager.GetSystemRef<TimeTrialLeaderboardManager>();
 		}
 
 		// 06000765 (1.10.1 RVA 0x654DC0)
