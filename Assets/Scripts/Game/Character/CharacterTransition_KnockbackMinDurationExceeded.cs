@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 06001762 (1.10.1 RVA 0x792580)
 		private CharacterTransition_KnockbackMinDurationExceeded(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001763 (1.10.1 RVA 0x792590)
@@ -26,7 +25,7 @@ namespace HardlightProject
 		protected override bool DoUpdate(IGraphUser user, FSMUpdateContext updateContext)
 		{
 			Character character = user.GetAs<Character>();
-			return character.TryGetAbility((ActorAbilityType)(-1159123515), out CharacterAbility_Knockback ability) && ability.Enabled && ability.MinDurationExceeded();
+			return character.TryGetAbility((ActorAbilityType)(-1159123515), out CharacterAbility_Knockback ability) && ability.IsTriggered && ability.MinDurationExceeded();
 		}
 	}
 }

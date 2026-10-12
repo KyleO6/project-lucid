@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 0600175c (1.10.1 RVA 0x792160)
 		protected CharacterTransition_JumpExit(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 0600175d (1.10.1 RVA 0x792170)

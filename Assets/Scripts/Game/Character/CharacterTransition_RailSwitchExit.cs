@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 06001783 (1.10.1 RVA 0x7937D0)
 		protected CharacterTransition_RailSwitchExit(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001784 (1.10.1 RVA 0x7937E0)

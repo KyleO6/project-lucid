@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 0600179a (1.10.1 RVA 0x794520)
 		private CharacterTransition_ShouldRespawn(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 0600179b (1.10.1 RVA 0x794530)

@@ -12,7 +12,6 @@ namespace HardlightProject
 		// 060015d3 (1.10.1 RVA 0xE78910)
 		protected CharacterState_Rail(FiniteStateMachine fsm, FSMIdentifier stateId, AbilityJSONCtorArgs ctorArgs) : base(fsm, stateId, ctorArgs)
 		{
-			
 		}
 
 		// 060015d4 (1.10.1 RVA 0xE78930)

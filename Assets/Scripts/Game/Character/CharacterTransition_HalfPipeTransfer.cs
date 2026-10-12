@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 06001732 (1.10.1 RVA 0x790F80)
 		private CharacterTransition_HalfPipeTransfer(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001733 (1.10.1 RVA 0x790F90)

@@ -14,7 +14,6 @@ namespace HardlightProject
 		// 060016fb (1.10.1 RVA 0x78EF60)
 		protected CharacterTransition_AirAbilityEnter(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 060016fc (1.10.1 RVA 0x78EF70)
