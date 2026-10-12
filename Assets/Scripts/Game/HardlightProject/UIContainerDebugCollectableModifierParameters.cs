@@ -20,7 +20,7 @@ namespace HardlightProject
 		// 06003235 (1.10.1 RVA 0x62F0A0)
 		public UIContainerDebugCollectableModifierParameters(string name, int collected, int total, Action onIncrease, Action onDecrease)
 		{
-			this = default;
+			Name = name;
 			Collected = collected;
 			Total = total;
 			OnIncrease = onIncrease;

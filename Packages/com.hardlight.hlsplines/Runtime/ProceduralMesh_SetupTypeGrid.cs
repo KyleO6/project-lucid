@@ -23,10 +23,10 @@ namespace Hardlight
 		private Vector3 m_maxPositionDeviation;
 
 		[SerializeField]
-		private float m_minScale;
+		private float m_minScale = 1f;
 
 		[SerializeField]
-		private float m_maxScale;
+		private float m_maxScale = 1f;
 
 		[SerializeField]
 		private bool m_useParentScale;
@@ -94,8 +94,6 @@ namespace Hardlight
 		// 0600011f (1.10.1 RVA 0x1A61580)
 		public ProceduralMesh_SetupTypeGrid()
 		{
-			m_minScale = 1f;
-			m_maxScale = 1f;
 		}
 	}
 }

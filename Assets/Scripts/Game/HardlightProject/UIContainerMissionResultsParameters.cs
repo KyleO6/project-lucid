@@ -13,7 +13,7 @@ namespace HardlightProject
 		// 06003360 (1.10.1 RVA 0x637230)
 		public UIContainerMissionResultsParameters(MissionDefinition missionDefinition, GameplayLevelDefinition levelDefinition)
 		{
-			this = default;
+			MissionDefinition = missionDefinition;
 			LevelDefinition = levelDefinition;
 		}
 	}

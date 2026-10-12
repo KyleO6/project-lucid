@@ -12,7 +12,7 @@ namespace HardlightProject
 		// 06003879 (1.10.1 RVA 0x6A31F0)
 		public UIWidgetSliderPipParameters(Color colour)
 		{
-			this = default;
+			Colour = colour;
 			// (no initialisers)
 		}
 	}
