@@ -1256,3 +1256,11 @@ EDITMODE_TESTS += (
 )
 
 EDITMODE_TESTS += ('OriginalFontReferenceConversionTests.OwnedOriginalAndExplicitConvertedFontCollectionReferencesImportWithOriginalKeys',)
+
+EDITMODE_TESTS += (
+    'ProjectLucid.Tests.OriginalGameConfigurationTests.OriginalConfigurationDeclarationsRetainScopedFieldsMethodsAndAnnotations',
+    'ProjectLucid.Tests.OriginalGameConfigurationTests.OwnedSeverityLookupKeepsFirstMatchFallbackAndPublicFailureLevels',
+    'ProjectLucid.Tests.OriginalGameConfigurationTests.OwnedSceneExclusionsUseOrderedCaseSensitiveSubstringsAndBlankRejection',
+    'ProjectLucid.Tests.OriginalGameConfigurationTests.OwnedBuildFeaturesPreserveOrderDuplicatesAndLiveReadOnlyViews',
+    'ProjectLucid.Tests.OriginalGameConfigurationTests.OwnedConstructorFailureAndSerializedApplyKeepTheRealFeatureCache',
+)
