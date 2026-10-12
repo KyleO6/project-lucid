@@ -20,7 +20,7 @@ namespace HardlightProject
 
 		private GameObject m_debugTargetObject;
 
-		private readonly SystemRef<TimeManager> m_timeManagerRef;
+		private readonly SystemRef<TimeManager> m_timeManagerRef = ProcessManager.GetSystemRef<TimeManager>();
 
 		public T DefinitionAirChaos { get; private set; }
 
@@ -81,7 +81,6 @@ namespace HardlightProject
 		// 06001039 (1.10.1 RVA 0xE5D980)
 		public CharacterAbility_AirChaos()
 		{
-			m_timeManagerRef = ProcessManager.GetSystemRef<TimeManager>();
 		}
 	}
 }
