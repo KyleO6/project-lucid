@@ -65,7 +65,7 @@ namespace HardlightProject
 			base.DoUpdate(user, updateContext);
 			float time = user.Storage.AdjustValue(ActorFSMKeys.InDyingStateTime, updateContext.DeltaTime);
 			Character character = user.GetAs<Character>();
-			if (!character.Storage.GetValue(ActorFSMKeys.InterruptDyingState, false, true) && time >= m_dyingTime)
+			if (!character.Storage.GetValue(ActorFSMKeys.InterruptDyingState, false, true) && !(time < m_dyingTime))
 			{
 				user.Storage.SetValue(ActorFSMKeys.InHardFailureState, true);
 			}

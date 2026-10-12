@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 06001725 (1.10.1 RVA 0x790580)
 		private CharacterTransition_GameplayControlsEnabled(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001726 (1.10.1 RVA 0x790590)

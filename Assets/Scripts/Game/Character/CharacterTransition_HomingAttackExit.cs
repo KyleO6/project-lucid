@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 06001745 (1.10.1 RVA 0x7917D0)
 		protected CharacterTransition_HomingAttackExit(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001746 (1.10.1 RVA 0x7917E0)

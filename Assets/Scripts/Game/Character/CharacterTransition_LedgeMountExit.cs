@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 0600176d (1.10.1 RVA 0x792B20)
 		protected CharacterTransition_LedgeMountExit(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 0600176e (1.10.1 RVA 0x792B30)

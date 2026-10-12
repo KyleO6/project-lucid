@@ -14,7 +14,6 @@ namespace HardlightProject
 		// 060015ba (1.10.1 RVA 0x77AF60)
 		protected CharacterState_Knockback(FiniteStateMachine fsm, FSMIdentifier stateId, AbilityJSONCtorArgs ctorArgs) : base(fsm, stateId, ctorArgs)
 		{
-			
 		}
 
 		// 060015bb (1.10.1 RVA 0x77AFD0)

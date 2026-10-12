@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 0600171e (1.10.1 RVA 0x7902E0)
 		protected CharacterTransition_Fall(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 0600171f (1.10.1 RVA 0x7902F0)
@@ -28,7 +27,9 @@ namespace HardlightProject
 			if (base.DoUpdate(user, updateContext))
 				return true;
 			Character character = user.GetAs<Character>();
-			return !character.ActiveTracking.IsOnGround() && character.Collider.GroundHitLastFrame.Hit && !character.ActiveTracking.WasOnGround();
+			CharacterCollisionTracker connectionTracker = character.Collider.ConnectionTracker;
+			CharacterTracking tracking = character.ActiveTracking;
+			return !tracking.IsOnGround() && (!connectionTracker.HasMovement || !tracking.WasOnGround());
 		}
 	}
 }

@@ -14,7 +14,6 @@ namespace HardlightProject
 		// 0600170f (1.10.1 RVA 0x78F9F0)
 		protected CharacterTransition_ClimbExitDirectionModifier(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001710 (1.10.1 RVA 0x78FA00)

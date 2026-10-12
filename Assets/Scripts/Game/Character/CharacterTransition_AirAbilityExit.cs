@@ -13,7 +13,6 @@ namespace HardlightProject
 		// 06001701 (1.10.1 RVA 0x78F3C0)
 		protected CharacterTransition_AirAbilityExit(FiniteStateMachine fsm, FSMIdentifier transitionId) : base(fsm, transitionId)
 		{
-			
 		}
 
 		// 06001702 (1.10.1 RVA 0x78F3D0)
@@ -28,7 +27,7 @@ namespace HardlightProject
 			if (base.DoUpdate(user, updateContext))
 				return true;
 			CharacterAbility_Air ability = user.GetAs<Character>().Storage.GetValue<CharacterAbility_Air>(ActorFSMKeys.AirAbilityActive, null, true);
-			return ability != null && !ability.Enabled;
+			return ability != null && !ability.AirActive;
 		}
 	}
 }
