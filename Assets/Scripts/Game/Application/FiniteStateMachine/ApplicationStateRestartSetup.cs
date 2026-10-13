@@ -11,14 +11,14 @@ using UnityEngine;
 namespace HardlightProject
 {
 	// Original Game.Runtime 02000150; bodies translated from the 1.10.1 x86-64 binary.
-	[GraphNodeMenuFormat("Application/{0}")]
 	[Il2CppSetOption(Option.NullChecks, false)]
+	[GraphNodeMenuFormat("Application/{0}")]
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateRestartSetup : FSMState
 	{
 		[Serializable]
-		[Il2CppSetOption(Option.NullChecks, false)]
 		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+		[Il2CppSetOption(Option.NullChecks, false)]
 		private class JSONCtorArgs
 		{
 			[GraphUnityObject(typeof(ApplicationStateEvent))]
@@ -97,7 +97,7 @@ namespace HardlightProject
 				{
 					return false;
 				}
-				levelManager.OnLevelRestart?.Invoke();
+				levelManager.OnLevelRestart();
 				user.Storage.SetValue(AppFSMKeys.LevelLoadParameters, new LevelManagerLoadLevelParameters(loadedLevel.LevelDefinition));
 				_003C_003E4__this.PublishMessage(user);
 				return false;

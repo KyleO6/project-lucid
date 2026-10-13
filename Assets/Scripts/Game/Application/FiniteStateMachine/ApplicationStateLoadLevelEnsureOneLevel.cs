@@ -11,9 +11,9 @@ using UnityEngine;
 namespace HardlightProject
 {
 	// Original Game.Runtime 02000136; bodies translated from the 1.10.1 x86-64 binary.
-	[GraphNodeMenuFormat("Application/Levels/{0}")]
 	[Il2CppSetOption(Option.NullChecks, false)]
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+	[GraphNodeMenuFormat("Application/Levels/{0}")]
 	public class ApplicationStateLoadLevelEnsureOneLevel : FSMState
 	{
 		[Serializable]

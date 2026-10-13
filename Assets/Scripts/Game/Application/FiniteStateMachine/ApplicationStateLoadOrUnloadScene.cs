@@ -167,7 +167,7 @@ namespace HardlightProject
 		public new static IFSMState ConstructInstance(FiniteStateMachine fsm, FSMIdentifier stateId, string jsonCtorArgs)
 		{
 			JSONCtorArgs args = JsonUtility.FromJson<JSONCtorArgs>(jsonCtorArgs);
-			return new ApplicationStateLoadOrUnloadScene(fsm, stateId, args.SceneName, (SceneCommand)Enum.Parse(typeof(SceneCommand), args.Command, true), args.Additive, args.SetActiveOnLoad, ApplicationStateEvent.FindByName(args.EventId));
+			return new ApplicationStateLoadOrUnloadScene(fsm, stateId, args.SceneName, (SceneCommand)Enum.Parse(typeof(SceneCommand), args.Command, true), args.Additive, args.SetActiveOnLoad, string.IsNullOrEmpty(args.EventId) ? null : ApplicationStateEvent.FindByName(args.EventId));
 		}
 
 		// 060006b7 (1.10.1 RVA 0x64A270)
@@ -187,6 +187,10 @@ namespace HardlightProject
 		// 060006b9 (1.10.1 RVA 0x64A3A0)
 		private void PublishMessage(IGraphUser user)
 		{
+			if (m_stateEvent == null)
+			{
+				return;
+			}
 			user.Storage.GetValue<List<ApplicationStateEvent>>(AppFSMKeys.StateEvents, null, true).AddUnique(m_stateEvent);
 		}
 	}
