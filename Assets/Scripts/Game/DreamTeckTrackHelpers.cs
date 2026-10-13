@@ -13,34 +13,34 @@ namespace HardlightProject
 		private int floorMaterialID;
 
 		[SerializeField]
-		private int channelCountOverride;
+		private int channelCountOverride = -1;
 
 		[SerializeField]
 		private Mesh wallMeshBase;
 
 		[SerializeField]
-		private int channelCountOverrideWalls;
+		private int channelCountOverrideWalls = -1;
 
 		[SerializeField]
-		private bool generateLeftWall;
+		private bool generateLeftWall = true;
 
 		[SerializeField]
-		private int leftWallLayerOverride;
+		private int leftWallLayerOverride = 14;
 
 		[SerializeField]
-		private float leftWallOffset;
+		private float leftWallOffset = -6.0f;
 
 		[SerializeField]
 		private int leftWallMaterialId;
 
 		[SerializeField]
-		private bool generateRightWall;
+		private bool generateRightWall = true;
 
 		[SerializeField]
-		private int rightWallLayerOverride;
+		private int rightWallLayerOverride = 14;
 
 		[SerializeField]
-		private float rightWallOffset;
+		private float rightWallOffset = 6.0f;
 
 		[SerializeField]
 		private int rightWallMaterialId;
@@ -49,19 +49,19 @@ namespace HardlightProject
 		private bool generateLeftWallBarrier;
 
 		[SerializeField]
-		private float leftWallBarrierOffset;
+		private float leftWallBarrierOffset = -6.0f;
 
 		[SerializeField]
-		private float leftWallBarrierScale;
+		private float leftWallBarrierScale = 6.0f;
 
 		[SerializeField]
 		private bool generateRightWallBarrier;
 
 		[SerializeField]
-		private float rightWallBarrierOffset;
+		private float rightWallBarrierOffset = 6.0f;
 
 		[SerializeField]
-		private float rightWallBarrierScale;
+		private float rightWallBarrierScale = 6.0f;
 
 		[SerializeField]
 		private Mesh barrierMeshBase;
@@ -73,13 +73,13 @@ namespace HardlightProject
 		private Mesh wallMeshLodLow;
 
 		[SerializeField]
-		private bool autoGenerateLowestLod;
+		private bool autoGenerateLowestLod = true;
 
 		[SerializeField]
-		private int autoLodQuality;
+		private int autoLodQuality = 1;
 
 		[SerializeField]
-		private float lodDistanceMultiplier;
+		private float lodDistanceMultiplier = 1.0f;
 
 		// 06003e1a (1.10.1 RVA 0x6E68A0)
 		private void Start()
@@ -94,21 +94,6 @@ namespace HardlightProject
 		// 06003e1c (1.10.1 RVA 0x6E68C0)
 		public DreamTeckTrackHelpers()
 		{
-			channelCountOverride = -1;
-			channelCountOverrideWalls = -1;
-			generateLeftWall = true;
-			leftWallLayerOverride = 14;
-			leftWallOffset = -6.0f;
-			generateRightWall = true;
-			rightWallLayerOverride = 14;
-			rightWallOffset = 6.0f;
-			leftWallBarrierOffset = -6.0f;
-			leftWallBarrierScale = 6.0f;
-			rightWallBarrierOffset = 6.0f;
-			rightWallBarrierScale = 6.0f;
-			autoGenerateLowestLod = true;
-			autoLodQuality = 1;
-			lodDistanceMultiplier = 1.0f;
 		}
 	}
 }

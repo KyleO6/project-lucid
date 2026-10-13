@@ -15,21 +15,18 @@ namespace HardlightProject
 		public class HalfPipeGravity
 		{
 			[Tooltip("Multiplies the character's current gravity whilst ascending.")]
-			public float GravityMultiplierAscending;
+			public float GravityMultiplierAscending = 1.0f;
 
 			[Tooltip("Multiplies the character's current gravity whilst descending.")]
-			public float GravityMultiplierDescending;
+			public float GravityMultiplierDescending = 1.0f;
 
 			[Tooltip("Maximum attainable speed when descending.")]
-			public float TerminalSpeed;
+			public float TerminalSpeed = 1e+02f;
 
 			// 06001b0a (1.10.1 RVA 0x543040)
 			public HalfPipeGravity()
 			{
-			GravityMultiplierAscending = 1.0f;
-			GravityMultiplierDescending = 1.0f;
-			TerminalSpeed = 1e+02f;
-		}
+			}
 		}
 
 		[Serializable]
