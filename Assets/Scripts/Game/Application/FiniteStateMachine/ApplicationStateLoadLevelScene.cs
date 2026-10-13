@@ -11,14 +11,14 @@ using UnityEngine;
 namespace HardlightProject
 {
 	// Original Game.Runtime 0200013b; bodies translated from the 1.10.1 x86-64 binary.
+	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	[GraphNodeMenuFormat("Application/Levels/{0}")]
 	[Il2CppSetOption(Option.NullChecks, false)]
-	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public class ApplicationStateLoadLevelScene : FSMState
 	{
 		[Serializable]
-		[Il2CppSetOption(Option.NullChecks, false)]
 		[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+		[Il2CppSetOption(Option.NullChecks, false)]
 		protected class JSONCtorArgs
 		{
 			[GraphUnityObject(typeof(ApplicationStateEvent))]
