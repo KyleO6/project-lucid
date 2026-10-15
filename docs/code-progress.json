@@ -244,7 +244,7 @@
     }
   ],
   "behavior_parity_verified": false,
-  "compiler_receipt_sha256": "9babffa7178a0015d73792915e5bd4604177cae413a6c45151ce80a3246c9f47",
+  "compiler_receipt_sha256": "8b58eb45f63b43a714da7fc32b3689e66ba4093338d92a80af7406d6f25d919f",
   "generated_by": "ProjectLucid.code_progress",
   "input_binary_sha256": "e94d984c0bc726a3a66ed0b39785d5166f92aa4356b3dd742fce098d42521987",
   "input_metadata_sha256": "88af04a6e548dae5e00c13dd52add4e48f9917a31db784d3b21274b137e49837",
@@ -252,7 +252,7 @@
   "native_byte_matching_verified": false,
   "schema_version": 3,
   "scope_sha256": "e7dfba0c3ea54180ebbe8684c7b9068f14c82f530be9f7547a88c2610fc38c9a",
-  "source_fingerprint": "1b24a69d3faef0f1434b1586fffef3e9fb4e79d0c86a76882770d8692874b772",
+  "source_fingerprint": "470ce478b5acff03d59dc28d91577dc8a96049e705f42978adb4124c85e6f649",
   "totals": {
     "implemented_source_bodies": 10021,
     "not_implemented": 9932,
