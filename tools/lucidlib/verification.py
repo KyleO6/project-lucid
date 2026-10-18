@@ -4088,3 +4088,9 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalLogicMathNodeTests." + name 
     "ProgressWithAStartTimeClampsOnlyAtTheEnd",
     "ProgressWithoutAStartTimeReportsOnlyFinishedOrNot",
 ))
+
+# Issue #324: StopFullscreenShader stops overrides before dropping the handle.
+EDITMODE_TESTS += (
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.StopFullscreenShaderStopsOverridesBeforeDroppingTheUsersHandle",
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.StopFullscreenShaderRunsOnItsTriggerEventAndClearsPendingStops",
+)
