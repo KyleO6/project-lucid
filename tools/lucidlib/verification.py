@@ -4088,3 +4088,9 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalLogicMathNodeTests." + name 
     "ProgressWithAStartTimeClampsOnlyAtTheEnd",
     "ProgressWithoutAStartTimeReportsOnlyFinishedOrNot",
 ))
+
+# Issue #320: Error state message and CheckCutscenePlaying truth table.
+EDITMODE_TESTS += (
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.ErrorStateLogsItsNameMachineUserAndMessageOnce",
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.CheckCutscenePlayingFollowsLoadingThenComparisonTruthTable",
+)
