@@ -4088,3 +4088,10 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalLogicMathNodeTests." + name 
     "ProgressWithAStartTimeClampsOnlyAtTheEnd",
     "ProgressWithoutAStartTimeReportsOnlyFinishedOrNot",
 ))
+
+# Issue #314: state-message FSM nodes use the App storage, not the user's.
+EDITMODE_TESTS += (
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.PublishStateMessageAddsToAppStorageOnceAndLeavesTheUsersList",
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.RemoveStateMessageRemovesFromAppStorageAndAcceptsAnAbsentEvent",
+    "ProjectLucid.Tests.OriginalApplicationFsmGapTests.StateMessageTransitionFiresOncePerPublishedAppEvent",
+)
