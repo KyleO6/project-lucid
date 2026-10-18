@@ -1,5 +1,5 @@
-// Complete native-derived original Actor source candidate. PRIVATE, UNCOMPILED, UNACCEPTED.
-// Full genuine dependencies remain required; no substitute controller/type shells.
+// Original Game.Runtime Actor, compiled with its maintained dependencies. Prefab
+// bindings and gameplay behavior are not yet verified; no substitute shells are used.
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,9 +12,7 @@ namespace HardlightProject
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class Actor : MonoBehaviour, ITimeScaled, IGraphUser, IHasVisualProxy
-    { // Private original Actor members. Complete genuine effect/audio/PFX dependencies
-        // Private and incomplete: not a compilable substitute class or type shell.
-        // Intended complete class identity: public abstract Actor : MonoBehaviour,
+    { // Original class identity: public abstract Actor : MonoBehaviour,
         // ITimeScaled, IGraphUser, IHasVisualProxy. Original option order: NullChecks=false,
         // ArrayBoundsChecks=false. Full schema/36fields/152methods remains authoritative.
         // 06000316 is a BeforeFieldInit initializer: original AngleAxis(180, up),
@@ -90,14 +88,8 @@ namespace HardlightProject
         public ActorAttachPoints ActorAttachPoints { get; private set; } // 2b9/2ba
 
         public ActorPFXController PFXController => m_pfxController; // 2bb
-        // Private original Actor member fragments, not a complete class or compilable source.
-        // Exact original class schema and all 152 declarations are adjacent. No missing
-        // dependency type or method body is supplied by a placeholder. This file must not
-        // be promoted until the complete genuine Actor and its dependency graph closes.
         // Game.Runtime 060002bc, ARM4eae1c: genuine FSMStorage(0), no other Awake work.
         protected virtual void Awake() => Storage = new FSMStorage(0);
-        // Private original Actor member fragments. Full Actor and genuine dependencies
-        // remain incomplete/uncompiled/unaccepted; this is not a substitute controller.
         // 060002bd. Initialisation order is authored: lookup ownership and animator,
         // optional audio, PFX, cached world pose, graph dictionaries, FSM user, scheduler,
         // buffs, fullscreen manager, then the final initialised flag. No rollback/finally.
@@ -322,8 +314,6 @@ namespace HardlightProject
 
         // 060002dc, ARM4ecdb4: capture WorldToLocalRotation before virtual velocity query.
         private void RefreshLocalVelocity() => LocalVelocity = WorldToLocalRotation * WorldVelocity;
-        // Private original Actor fragments. No type shells/placeholder controller or
-        // substituted authored flow. Complete original class/dependencies remain blocked.
         // 060002dd. Preserve two virtual velocity reads and the intervening cached up
         // vector. Tangential speed is its magnitude, not signed local z or a clamp.
         public void OrientateVelocityToForward()

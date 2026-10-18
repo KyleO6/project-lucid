@@ -69,52 +69,52 @@ namespace HardlightProject
         [UnityEngine.SerializeField]
         private System.String m_ftueStepID;
 
-        // Original 0x06001eaa; returns the stored value without copying or normalizing it.
+        // Original 0x06001eaa.
         public HardlightProject.PromptSlotType PromptSlot => m_promptSlot;
 
-        // Original 0x06001eab; returns the stored value without copying or normalizing it.
+        // Original 0x06001eab.
         public Hardlight.Enums.Strings Text => m_text;
 
-        // Original 0x06001eac; returns the stored value without copying or normalizing it.
+        // Original 0x06001eac.
         public UnityEngine.AddressableAssets.AssetReferenceAtlasedSprite Image => m_atlasedImage;
 
-        // Original 0x06001ead; returns the stored value without copying or normalizing it.
+        // Original 0x06001ead.
         public HardlightProject.PromptDefinition.PromptOccurenceType PauseOccurence => m_pauseOccurence;
 
-        // Original 0x06001eae; returns the stored value without copying or normalizing it.
+        // Original 0x06001eae.
         public HardlightProject.PromptDefinition.PromptOccurenceType DisplayOccurence => m_displayOccurence;
 
-        // Original 0x06001eaf; returns the stored value without copying or normalizing it.
+        // Original 0x06001eaf.
         public System.Boolean TapToContinue => m_tapToContinue;
 
-        // Original 0x06001eb0; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb0.
         public System.Single MinimumContinueSeconds => m_minimumContinueSeconds;
 
-        // Original 0x06001eb1; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb1.
         public System.Single AutomaticContinueSeconds => m_automaticContinueSeconds;
 
-        // Original 0x06001eb2; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb2.
         public HardlightProject.UIContainerPrompt PromptPrefab => m_promptPrefab;
 
-        // Original 0x06001eb3; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb3.
         public System.Int32 Priority => m_priority;
 
-        // Original 0x06001eb4; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb4.
         public System.Boolean IsExclusive => m_isExclusive;
 
-        // Original 0x06001eb5; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb5.
         public System.Collections.Generic.IReadOnlyList<HardlightProject.PromptDefinition.PromptDefinitionChoice> Choices => m_choices;
 
-        // Original 0x06001eb6; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb6.
         public System.Collections.Generic.IReadOnlyList<HardlightProject.PromptDefinition.PromptDefinitionDisplayInput> DisplayGameInputs => m_displayGameInputs;
 
-        // Original 0x06001eb7; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb7.
         public UnityEngine.GameObject DisplayGameInputsSeparator => m_displayGameInputsSeparator;
 
-        // Original 0x06001eb8; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb8.
         public System.Boolean SendFTUEAnalytics => m_sendFTUEAnalytics;
 
-        // Original 0x06001eb9; returns the stored value without copying or normalizing it.
+        // Original 0x06001eb9.
         public System.String FTUEStepID => m_ftueStepID;
 
         // Original 0x06001eba. The first default remains; later defaults are cleared.

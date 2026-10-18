@@ -256,7 +256,7 @@ namespace HardlightProject
         // Game.Runtime 0x06001e01, native 0x528b1c: DefinitionData source field.
         public bool ExclusiveToCharacter => DefinitionData.m_exclusiveToCharacter;
 
-        // Game.Runtime 0x06001e02, native 0x528b68: owner field.
+        // Game.Runtime 0x06001e02, native 0x528b68.
         public CharacterArchetype CharacterArchetype => m_characterArchetype;
 
         // Game.Runtime 0x06001e03, native 0x528b70: DefinitionData source field.
@@ -301,7 +301,7 @@ namespace HardlightProject
         // Game.Runtime 0x06001e10, native 0x528eb4: DefinitionData source field.
         public int RewardValue => DefinitionData.m_rewardValue;
 
-        // Game.Runtime 0x06001e11, native 0x528f00: owner field.
+        // Game.Runtime 0x06001e11, native 0x528f00.
         public CollectableType RewardType => m_rewardType;
 
         // Game.Runtime 0x06001e12, native 0x528f08: DefinitionData source field.
@@ -310,16 +310,16 @@ namespace HardlightProject
         // Game.Runtime 0x06001e13, native 0x528f54: DefinitionData source field.
         public MusicTrackDefinition MusicTrack => DefinitionData.m_musicTrack;
 
-        // Game.Runtime 0x06001e14, native 0x528fa0: owner field.
+        // Game.Runtime 0x06001e14, native 0x528fa0.
         public int XPReward => m_xpReward;
 
         // Game.Runtime 0x06001e15, native 0x525118: DefinitionData source field.
         public int TotalObjectiveCount => DefinitionData.m_totalObjectivesCount;
 
-        // Game.Runtime 0x06001e16, native 0x528fa8: owner field.
+        // Game.Runtime 0x06001e16, native 0x528fa8.
         public bool IsScored => m_isScored;
 
-        // Game.Runtime 0x06001e17, native 0x528fb0: owner field.
+        // Game.Runtime 0x06001e17, native 0x528fb0.
         public bool IsTimed => m_isTimed;
 
         // Game.Runtime 0x06001e18, native 0x528fb8: DefinitionData source field.
@@ -338,13 +338,13 @@ namespace HardlightProject
         // Game.Runtime 0x06001e1c, native 0x52914c: DefinitionData source field.
         public bool IsInstancedTracker => DefinitionData.m_isInstancedTracker;
 
-        // Game.Runtime 0x06001e1d, native 0x529198: owner field.
+        // Game.Runtime 0x06001e1d, native 0x529198.
         public bool IsInstancedSequencedTracker => m_isInstancedSequencedTracker;
 
         // Game.Runtime 0x06001e1e, native 0x5291a0: DefinitionData source field.
         public bool IsPersistentTracker => DefinitionData.m_isPersistentTracker;
 
-        // Game.Runtime 0x06001e1f, native 0x5291ec: owner field.
+        // Game.Runtime 0x06001e1f, native 0x5291ec.
         public bool IsReachGoalTracker => m_isReachGoalTracker;
 
         // Game.Runtime 0x06001e20, native 0x5291f4: DefinitionData source field.
@@ -368,7 +368,7 @@ namespace HardlightProject
         // Game.Runtime 0x06001e26, native 0x525dd4: DefinitionData source field.
         public float ObjectivesAdditionalTotalTimeSeconds => DefinitionData.m_objectivesAdditionalTotalTimeSeconds;
 
-        // Game.Runtime 0x06001e27, native 0x5293bc: owner field.
+        // Game.Runtime 0x06001e27, native 0x5293bc.
         public MissionDefinition CompletedMissionOverrides => m_completedMissionOverrides;
 
         // Game.Runtime 0x06001e28, native 0x5293c4: DefinitionData source field.
@@ -377,16 +377,16 @@ namespace HardlightProject
         // Game.Runtime 0x06001e29, native 0x529410: DefinitionData source field.
         public MissionRankDefinition Ranks => DefinitionData.m_ranks;
 
-        // Game.Runtime 0x06001e2a, native 0x52945c: owner field.
+        // Game.Runtime 0x06001e2a, native 0x52945c.
         public GameplayLevelDefinition SceneOverride => m_sceneOverride;
 
-        // Game.Runtime 0x06001e2b, native 0x529464: owner field.
+        // Game.Runtime 0x06001e2b, native 0x529464.
         public bool AllowLockedCharacters => m_allowLockedCharacters;
 
-        // Game.Runtime 0x06001e2c, native 0x52946c: owner field.
+        // Game.Runtime 0x06001e2c, native 0x52946c.
         public ZoneThemeOverride ZoneThemeOverride => m_zoneThemeOverride;
 
-        // Game.Runtime 0x06001e2d, native 0x529474: owner field.
+        // Game.Runtime 0x06001e2d, native 0x529474.
         public bool UseAltUILayout => m_useAltUILayout;
 
         // Game.Runtime 0x06001e2e, native 0x528a3c: original GUID equality, lazy self source, without m_hasOverrides gating.

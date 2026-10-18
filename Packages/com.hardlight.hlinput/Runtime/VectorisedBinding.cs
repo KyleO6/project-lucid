@@ -6,8 +6,9 @@ namespace Hardlight
 {
     // HLInput.Runtime 0x02000016: complete original local API is three fields
     // and zero methods. No constructor exists in shipped native metadata.
-    // Its implicit C# constructor is presently unbound and cannot call the
-    // genuine parameterized BaseBinding constructor; no invented body is used.
+    // StrippedBindingConstructionCompatibility.cs adds a private constructor
+    // calling base(modifiers) so this source compiles; it has no original
+    // credit, and asset/JSON construction routes still need engine tests.
     [Serializable]
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]

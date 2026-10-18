@@ -8,7 +8,8 @@ namespace ProjectLucid.Tests
     // Non-null counterparts of the null-owner faults in RecoveredBehaviorTests
     // (InertSplinePrerequisiteVerification / KnotRuntimePrerequisiteVerification):
     // genuine InertSpline, InertSplineKnot, SplineKnot and RibbonSubKnot owners
-    // with authored LUTs and transforms, so the native arithmetic actually runs.
+    // with authored LUTs and transforms, so the maintained managed arithmetic runs
+    // inside Unity. No original executable code is involved.
     public sealed class OriginalSplineRuntimeLookupTests
     {
         private const float Tolerance = 1e-5f;

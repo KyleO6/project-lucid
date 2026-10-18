@@ -6,9 +6,10 @@ namespace Hardlight
 {
     // Complete original SwipeScreenZone is maintained in InputEnums.cs.
     // HLInput.Runtime 0x02000015: one declared method, three declared fields,
-    // and NO original native constructor. The implicit C# constructor cannot
-    // call the genuine BaseBinding(List<InputModifier>) constructor. This is
-    // an explicit unresolved source-emission frontier, never base(null) credit.
+    // and NO original native constructor. StrippedBindingConstructionCompatibility.cs
+    // adds a private constructor calling base(modifiers) so this source compiles;
+    // it has no original credit (never base(null)), and asset/JSON construction
+    // routes still need engine tests.
     [Serializable]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     [Il2CppSetOption(Option.NullChecks, false)]
