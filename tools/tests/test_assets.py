@@ -361,6 +361,51 @@ class AssetTests(unittest.TestCase):
                 self.assertEqual(prior_pointer, pointer.read_bytes())
                 self.assertEqual(list((self.repo / "Assets").glob(".lucid-assets-*")), [])
 
+    def active_assets(self):
+        root = self.repo / "Assets"
+        return {path.relative_to(root).as_posix(): path.read_bytes() for path in sorted(root.rglob("*")) if path.is_file()}
+
+    def test_post_swap_publication_failure_restores_prior_assets_and_receipt(self):
+        project = self.make_export()
+        assets.prepare_assets(self.repo, self.work)
+        (self.repo / "Assets/Recovered/previous.txt").write_text("previous preparation")
+        pointer = self.work / "assets/latest-prepare.json"
+        prior_assets, prior_receipt = self.active_assets(), pointer.read_bytes()
+        scene = project / "Assets/Scenes/demo.unity"
+        scene.write_text(scene.read_text() + "--- !u!1 &2\nGameObject:\n  m_Name: changed\n")
+        assets._json_write(project.parent / "asset-map.json", assets.build_asset_map(project))
+        original_move, original_write = assets.shutil.move, assets._json_write
+        for failure in ("first backup move", "second backup move", "receipt write"):
+            with self.subTest(failure=failure):
+                moves = []
+                def move(source, destination):
+                    retaining = ".backup-" in Path(source).name and Path(destination).parent.parent.name == "backups"
+                    if retaining:
+                        moves.append(source)
+                        if (failure, len(moves)) in (("first backup move", 1), ("second backup move", 2)):
+                            raise OSError("injected " + failure)
+                    return original_move(source, destination)
+                def write(path, value):
+                    if failure == "receipt write" and Path(path).name == "latest-prepare.json":
+                        raise OSError("injected " + failure)
+                    return original_write(path, value)
+                with mock.patch.object(assets.shutil, "move", move), mock.patch.object(assets, "_json_write", write), \
+                        self.assertRaisesRegex(OSError, "injected"):
+                    assets.prepare_assets(self.repo, self.work)
+                self.assertEqual(prior_assets, self.active_assets())
+                self.assertEqual(prior_receipt, pointer.read_bytes())
+                self.assertEqual([], list((self.repo / "Assets").glob(".*")))
+                retained = [path for path in (self.work / "assets/backups").rglob("*") if path.is_file()]
+                self.assertEqual([], retained)
+        result = assets.prepare_assets(self.repo, self.work)
+        self.assertIn("changed", (self.repo / "Assets/Recovered/Scenes/demo.unity").read_text())
+        self.assertFalse((self.repo / "Assets/Recovered/previous.txt").exists())
+        self.assertEqual(result, json.loads(pointer.read_text()))
+        retained = [Path(path) for path in result["backup_paths"]]
+        self.assertEqual(2, len(retained))
+        self.assertTrue(any((path / "previous.txt").read_text() == "previous preparation" for path in retained
+                            if (path / "previous.txt").exists()))
+
     def test_prepare_refuses_unowned_destination(self):
         self.make_export()
         destination = self.repo / "Assets/Recovered"
