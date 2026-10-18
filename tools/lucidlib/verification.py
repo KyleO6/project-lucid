@@ -4088,3 +4088,9 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalLogicMathNodeTests." + name 
     "ProgressWithAStartTimeClampsOnlyAtTheEnd",
     "ProgressWithoutAStartTimeReportsOnlyFinishedOrNot",
 ))
+
+# Issue #312: Game.Runtime core FSM transitions built through their factories.
+EDITMODE_TESTS += (
+    "ProjectLucid.Tests.OriginalCoreFsmTransitionTests.IsTvOsFiresOnlyWhenFalseCausesTheTransition",
+    "ProjectLucid.Tests.OriginalCoreFsmTransitionTests.DevelopmentAndEditorOnlyNeverFireAndIgnoreTheirJson",
+)
