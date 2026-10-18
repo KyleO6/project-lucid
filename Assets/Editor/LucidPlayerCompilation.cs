@@ -302,7 +302,9 @@ namespace ProjectLucid.Editor
         {
             // On macOS this Unity API reports the .app bundle. Bind its actual
             // executable to the separately hashed wrapper identity.
-            string editorPath = EditorApplication.applicationPath;
+            // Unity reports this path with forward slashes on Windows; canonicalize the
+            // API value itself so the strict evidence-path check still applies to it.
+            string editorPath = Path.GetFullPath(EditorApplication.applicationPath);
             if (Application.platform == RuntimePlatform.OSXEditor && editorPath.EndsWith(".app", StringComparison.Ordinal))
                 editorPath = Path.Combine(editorPath, "Contents", "MacOS", "Unity");
             if (CheckedPath(editorPath) != context.Engine.Single(e => e.name == "editor").path ||

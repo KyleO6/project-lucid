@@ -100,7 +100,11 @@ namespace ProjectLucid.Editor
             ScriptingImplementation backend = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
             if (backend != ScriptingImplementation.Mono2x)
                 throw new InvalidDataException("Native Mono queries require the selected Mono backend");
-            string runtimeDirectory = runtime.Invoke(null, new object[] { target }) as string;
+            // The native query reports forward slashes on Windows. Canonicalize only a
+            // fully qualified result: an empty, relative, drive-relative (C:foo) or
+            // root-relative (\foo) value is left as reported and still fails CheckPath below.
+            string reported = runtime.Invoke(null, new object[] { target }) as string;
+            string runtimeDirectory = !String.IsNullOrEmpty(reported) && Path.IsPathFullyQualified(reported) ? Path.GetFullPath(reported) : reported;
             string folder = compatibility.Invoke(null, new object[] { api }) as string;
             string platform = suffix.Invoke(null, new object[] { target }) as string;
             CheckPath(runtimeDirectory);
