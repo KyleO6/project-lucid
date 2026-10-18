@@ -198,7 +198,7 @@ def _macos_slices(app):
         if path.exists()]
     slices, problems = {}, []
     for binary in binaries:
-        relative = str(binary.relative_to(contents))
+        relative = binary.relative_to(contents).as_posix()
         try:
             names = sorted(row["name"] for row in inspect_macho(binary)["architectures"])
         except ValueError as error:
