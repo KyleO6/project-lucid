@@ -10,9 +10,9 @@ import plistlib
 import re
 import uuid
 
-from .bootstrap import (ToolError, bootstrap, dotnet_environment, executable, managed_path,
-                        run_logged, validate_work_dir, write_json, tool_work_dir,
-                        seal_built_tool, verify_built_tool, verified_tool_path)
+from .bootstrap import (_INSPECTOR_LEASES, ToolError, _remove_tree, bootstrap, dotnet_environment,
+                        exclusive_lock, executable, leased_build, managed_path, run_logged,
+                        validate_work_dir, write_json, tool_work_dir, verified_tool_path)
 from .inspection import sha256_file
 from .macho import inspect_macho
 from .metadata import parse_metadata
@@ -158,36 +158,37 @@ File.WriteAllText(args[1], JsonSerializer.Serialize(new { assemblies, methods })
 def _inspect_managed_output(directory: Path, work_dir: Path, run_id: str, *, schemas: bool = False) -> dict:
     """Inspect actual emitted IL using .NET's metadata reader, not tool counters."""
     host_work = tool_work_dir(work_dir)
-    helper = managed_path(host_work, "tools", "il-inspector")
-    existed = helper.exists()
-    helper.mkdir(parents=True, exist_ok=True)
-    source_hash = hashlib.sha256(_INSPECTOR_SOURCE.encode()).hexdigest()
-    marker = managed_path(tool_work_dir(work_dir), "tools", "il-inspector", "lucid-inspector.json")
-    assembly = managed_path(tool_work_dir(work_dir), "tools", "il-inspector", "bin/Release/net10.0/RecoveryInspector.dll")
-    project = managed_path(tool_work_dir(work_dir), "tools", "il-inspector", "RecoveryInspector.csproj")
-    source_file = managed_path(tool_work_dir(work_dir), "tools", "il-inspector", "Program.cs")
-    dotnet_root = managed_path(tool_work_dir(work_dir), "tools", "dotnet")
-    dotnet = executable(dotnet_root / "dotnet")
-    if not dotnet.is_file():
+    dotnet_root = managed_path(host_work, "tools", "dotnet")
+    if not executable(dotnet_root / "dotnet").is_file():
         raise ToolError("Native .NET 10 SDK is missing for managed-output inspection")
     env = dotnet_environment(work_dir, dotnet_root)
-    identity = {"source_sha256": source_hash}
-    verified = verify_built_tool(helper, identity)
-    if not verified and existed:
-        raise ToolError("Unverified cached managed-output inspector; use a fresh host cache")
     dotnet = verified_tool_path(work_dir, "dotnet")
-    if not verified:
-        project.write_text(
-            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework>'
-            '<OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings>'
-            '</PropertyGroup></Project>\n', encoding="utf-8")
-        source_file.write_text(_INSPECTOR_SOURCE, encoding="utf-8")
-        built = run_logged([str(dotnet), "build", str(project), "-c", "Release"],
-                           work_dir, "il-inspector-build.log", timeout=120, env=env, cwd=helper)
-        if built["returncode"] or built["timed_out"]:
-            raise ToolError(f"Could not build the managed-output inspector: {built['log']}")
-        write_json(marker, identity)
-        seal_built_tool(helper, identity)
+    identity = {"source_sha256": hashlib.sha256(_INSPECTOR_SOURCE.encode()).hexdigest()}
+
+    def build(stage: Path, build_id: str, warnings: list) -> dict:
+        # Build from maintained source in a fresh owned tree; no earlier output is reused.
+        source = managed_path(host_work, "tools", f".il-inspector-source-{build_id}")
+        try:
+            source.mkdir(parents=True)
+            project = source / "RecoveryInspector.csproj"
+            project.write_text(
+                '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework>'
+                '<OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings>'
+                '</PropertyGroup></Project>\n', encoding="utf-8")
+            (source / "Program.cs").write_text(_INSPECTOR_SOURCE, encoding="utf-8")
+            built = run_logged([str(dotnet), "build", str(project), "-c", "Release", "-o", str(stage)],
+                               work_dir, "il-inspector-build.log", timeout=120, env=env, cwd=source)
+            if built["returncode"] or built["timed_out"] or not (stage / "RecoveryInspector.dll").is_file():
+                raise ToolError(f"Could not build the managed-output inspector: {built['log']}")
+            return built
+        finally:
+            _remove_tree(source, warnings)
+
+    lock_path = managed_path(host_work, "tools", ".il-inspector.lock")
+    with lock_path.open("a") as stream, exclusive_lock(stream):
+        helper, _, _ = leased_build(host_work, "il-inspector", "managed-output inspector", identity,
+                                    _INSPECTOR_LEASES, build, stale_globs=(".il-inspector-source-*",))
+    assembly = helper / "RecoveryInspector.dll"
     output = managed_path(work_dir, "recovery", run_id, "managed-methods.json")
     executed = run_logged([str(dotnet), str(assembly), str(directory), str(output)], work_dir,
                           f"il-inspection-{run_id}.log", timeout=120, env=env)

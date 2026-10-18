@@ -311,17 +311,102 @@ class ToolCacheTrustTests(unittest.TestCase):
         self.assertFalse(orphans[0].with_suffix(".lock").exists())
         self.spawn.assert_not_called()
 
-    def test_forged_inspector_marker_rejected_before_build_or_load(self):
-        sdk = self.work / "tools/dotnet/dotnet"
-        sdk.parent.mkdir(parents=True)
-        sdk.write_bytes(b"inert fake SDK")
+    def inspector_fixture(self):
+        self.archive("dotnet", {bootstrap.executable(Path("dotnet")).name: b"inert verified SDK"},
+                     bootstrap.executable(Path("dotnet")).name)
+        self.stack.enter_context(mock.patch.object(bootstrap, "load_lock", return_value=self.lock))
+        bootstrap._install("dotnet", self.lock, self.work)
+        self.addCleanup(self.release_inspector_leases)
+        self.executed = []
+
+    def release_inspector_leases(self):
+        """Mimic the owning process exiting."""
+        for path in list(bootstrap._INSPECTOR_LEASES):
+            if self.directory in path.parents:
+                bootstrap._release_lease(bootstrap._INSPECTOR_LEASES.pop(path))
+                bootstrap._BUILD_SEALS.pop(path, None)
+
+    def inspector_runner(self, command, *args, **kwargs):
+        if command[1] == "build":
+            stage = Path(command[command.index("-o") + 1])
+            stage.mkdir(parents=True)
+            (stage / "RecoveryInspector.dll").write_bytes(b"inert generated inspector")
+        else:
+            self.executed.append(Path(command[1]))
+            Path(command[3]).parent.mkdir(parents=True, exist_ok=True)
+            Path(command[3]).write_text(json.dumps({
+                "assemblies": [{"name": "Fixture", "file": "Fixture.dll", "types": 1, "methods": 1, "fields": 0}],
+                "methods": [{"assembly": "Fixture", "token": "0x06000001", "name": "Run", "declaring_type": "Fixture",
+                             "has_body": True, "il_length": 1, "il_prefix": "2A", "il_sha256": "00"}]}))
+        return {"returncode": 0, "timed_out": False, "log": "fixture"}
+
+    def inspect(self, run_id):
+        with mock.patch.object(recovery, "run_logged", side_effect=self.inspector_runner) as runner:
+            quality = recovery._inspect_managed_output(self.work, self.work, run_id)
+        return quality, [call.args[0] for call in runner.call_args_list if call.args[0][1] == "build"]
+
+    def inspector_builds(self):
+        builds = self.work / "tools/il-inspector-builds"
+        return sorted(path.name for path in builds.iterdir()) if builds.exists() else []
+
+    def test_each_recovery_process_obtains_a_managed_inventory_from_its_own_inspector(self):
+        self.inspector_fixture()
+        first, built = self.inspect("first")
+        self.assertEqual(1, len(built))
+        self.assertEqual({"trivial_or_default_body": 1}, first["counts"])
+        again, built = self.inspect("same-process")
+        self.assertEqual([], built)
+        self.assertEqual(first["counts"], again["counts"])
+        selected = self.executed[0]
+        self.assertEqual([selected, selected], self.executed)
+        self.release_inspector_leases()
+        second, built = self.inspect("next-process")
+        self.assertEqual(1, len(built))
+        self.assertEqual(first["counts"], second["counts"])
+        self.assertNotEqual(selected.parent, self.executed[-1].parent)
+        # The exited owner's build was pruned; only the live build and its lease remain.
+        live = self.executed[-1].parent.name
+        self.assertEqual([live, live + ".lock"], self.inspector_builds())
+        self.assertEqual([], list((self.work / "tools").glob(".il-inspector-source-*")))
+        self.spawn.assert_not_called()
+
+    def test_forged_legacy_inspector_output_is_never_loaded(self):
+        self.inspector_fixture()
         helper = self.work / "tools/il-inspector"
         dll = helper / "bin/Release/net10.0/RecoveryInspector.dll"
         dll.parent.mkdir(parents=True)
         dll.write_bytes(b"inert forged reader")
         bootstrap.write_json(helper / "lucid-inspector.json", {"source_sha256": hashlib.sha256(recovery._INSPECTOR_SOURCE.encode()).hexdigest()})
-        with mock.patch.object(recovery, "run_logged") as runner, self.assertRaisesRegex(bootstrap.ToolError, "Unverified cached managed-output inspector"):
-            recovery._inspect_managed_output(self.work, self.work, "fixture")
+        _, built = self.inspect("fixture")
+        self.assertEqual(1, len(built))
+        self.assertIn(self.work / "tools/il-inspector-builds", self.executed[0].parents)
+        self.assertEqual(b"inert generated inspector", self.executed[0].read_bytes())
+        self.assertEqual(b"inert forged reader", dll.read_bytes())
+        self.spawn.assert_not_called()
+
+    def test_interrupted_inspector_build_is_recovered_by_a_fresh_build(self):
+        self.inspector_fixture()
+        builds = self.work / "tools/il-inspector-builds"
+        (builds / ".build-interrupted").mkdir(parents=True)
+        (builds / ".build-interrupted/RecoveryInspector.dll").write_bytes(b"inert partial output")
+        (builds / "abandoned").mkdir()
+        (builds / "abandoned/RecoveryInspector.dll").write_bytes(b"inert abandoned output")
+        (builds / "abandoned.lock").write_bytes(b"")
+        (self.work / "tools/.il-inspector-source-interrupted").mkdir()
+        _, built = self.inspect("fixture")
+        self.assertEqual(1, len(built))
+        live = self.executed[0].parent.name
+        self.assertEqual([live, live + ".lock"], self.inspector_builds())
+        self.assertEqual([], list((self.work / "tools").glob(".il-inspector-source-*")))
+        self.spawn.assert_not_called()
+
+    def test_modified_sealed_inspector_is_rejected_before_execution(self):
+        self.inspector_fixture()
+        self.inspect("first")
+        self.executed[0].with_name("Substituted.dll").write_bytes(b"inert added dependency")
+        with mock.patch.object(recovery, "run_logged", side_effect=self.inspector_runner) as runner, \
+                self.assertRaisesRegex(bootstrap.ToolError, "managed-output inspector build changed during this process"):
+            recovery._inspect_managed_output(self.work, self.work, "second")
         runner.assert_not_called()
         self.spawn.assert_not_called()
 
