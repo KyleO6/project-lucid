@@ -10775,3 +10775,12 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalApplicationFsmGapTests." + n
     "LoadingInitialiseSystemsPublishesIntoTheUsersStorageOnce",
     "LoadingInitialiseSystemsAddsTheLevelSystemsInNativeOrder",
 ))
+
+# Camera, character camera, cutscene and screen-controls trigger states (#385).
+EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalApplicationFsmGapTests." + name for name in (
+    "TriggerCharacterCameraTakesTheCameraOnEnterAndReleasesItOnLeave",
+    "TriggerCameraReusesOrReleasesTheUsersOverrideHandle",
+    "TriggerCutsceneConsumesAQueuedCutsceneWithoutPlayingAPreload",
+    "TriggerCutsceneChoosesPreloadOrPlayByPreloadOnly",
+    "TriggerScreenControlsPublishesItsGroupFromTheCharacterWhenMessagesExist",
+))
