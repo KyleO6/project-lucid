@@ -10754,3 +10754,9 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalAppleArcadeSplashScreenTests
     "ABoundPlayerCompletesAtOnceWhenTheGraphHasLeftBoot",
     "TheBoundCompletionRunsOnceAfterTheGraphLeavesBoot",
 ))
+
+# ApplicationStateLoadingInitialiseSystems: the level systems and the loading event (#384).
+EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalApplicationFsmGapTests." + name for name in (
+    "LoadingInitialiseSystemsPublishesIntoTheUsersStorageOnce",
+    "LoadingInitialiseSystemsAddsTheLevelSystemsInNativeOrder",
+))
