@@ -23,6 +23,28 @@
       "withheld_bodies": 4
     },
     {
+      "assembly": "Dreamteck.Splines",
+      "implemented_source_bodies": 1138,
+      "measurement_status": "measured",
+      "not_implemented": 0,
+      "original_declarations": 1296,
+      "original_native_bodies": 1260,
+      "unavailable_reason": null,
+      "unresolved_identities": 48,
+      "withheld_bodies": 74
+    },
+    {
+      "assembly": "Dreamteck.Utilities",
+      "implemented_source_bodies": 99,
+      "measurement_status": "measured",
+      "not_implemented": 0,
+      "original_declarations": 108,
+      "original_native_bodies": 108,
+      "unavailable_reason": null,
+      "unresolved_identities": 4,
+      "withheld_bodies": 5
+    },
+    {
       "assembly": "Game.Runtime",
       "implemented_source_bodies": 7226,
       "measurement_status": "measured",
@@ -244,21 +266,21 @@
     }
   ],
   "behavior_parity_verified": false,
-  "compiler_receipt_sha256": "2c20fb5bac99304ce55c706a4335e1a6e4e49e84572a70663e6ead795f4ce6bd",
+  "compiler_receipt_sha256": "17d4c4797d07fd3e28fa10e87a5e535da4434d1599b816e22d2df7cfc7948e30",
   "generated_by": "ProjectLucid.code_progress",
   "input_binary_sha256": "e94d984c0bc726a3a66ed0b39785d5166f92aa4356b3dd742fce098d42521987",
   "input_metadata_sha256": "88af04a6e548dae5e00c13dd52add4e48f9917a31db784d3b21274b137e49837",
   "measure": "maintained-original-source-body-coverage-v1",
   "native_byte_matching_verified": false,
   "schema_version": 3,
-  "scope_sha256": "e7dfba0c3ea54180ebbe8684c7b9068f14c82f530be9f7547a88c2610fc38c9a",
-  "source_fingerprint": "6c1c2fc478a1a5f4d0e533ae4a808fa928267b26c6cbdabf83d37f399bf91ad3",
+  "scope_sha256": "230e91a85dbfe6816908d6014d5404051916a8a737f7c0acf02ae150c1b7becf",
+  "source_fingerprint": "a45b99919b15ed8e831b14539e07540181169768792827a4c9a73d7f0d75e862",
   "totals": {
-    "implemented_source_bodies": 13631,
+    "implemented_source_bodies": 14868,
     "not_implemented": 4414,
-    "original_declarations": 27332,
-    "original_native_bodies": 25897,
-    "unresolved_identities": 2211,
-    "withheld_bodies": 5641
+    "original_declarations": 28736,
+    "original_native_bodies": 27265,
+    "unresolved_identities": 2263,
+    "withheld_bodies": 5720
   }
 }

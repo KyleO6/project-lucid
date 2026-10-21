@@ -44,12 +44,14 @@ records. Original cloud saves and global rankings are not included.
 <!-- LUCID_CODE_PROGRESS:START -->
 ## Progress
 
-**13,631 of 25,897 original methods have maintained source implementations (52.64%).**
+**14,868 of 27,265 original methods have maintained source implementations (54.53%).**
 
 | Assembly | Methods with source | Original methods | Progress |
 |---|---:|---:|---:|
 | Assembly-CSharp (game code) | 16 | 21 | 76.19% |
 | Assembly-CSharp-firstpass (studio code) | 8 | 12 | 66.67% |
+| Dreamteck.Splines | 1,138 | 1,260 | 90.32% |
+| Dreamteck.Utilities | 99 | 108 | 91.67% |
 | Game.Runtime | 7,226 | 15,624 | 46.25% |
 | HLAnalytics.Runtime | 61 | 102 | 59.80% |
 | HLAppleInput.Runtime | 88 | 145 | 60.69% |
@@ -70,7 +72,7 @@ records. Original cloud saves and global rankings are not included.
 | HLSplines.Runtime | 1,013 | 1,299 | 77.98% |
 | HLUnityCore.Runtime | 2,290 | 4,200 | 54.52% |
 | HLUnityUI.Runtime | 1,197 | 1,724 | 69.43% |
-| **Total** | **13,631** | **25,897** | **52.64%** |
+| **Total** | **14,868** | **27,265** | **54.53%** |
 
 Generated from original method signatures and compiled source. Counts are conservative: ambiguous signatures and recognized trivial or placeholder patterns are excluded, including some genuine trivial methods. These counts cover methods with original native bodies; the game is not yet playable.
 <!-- LUCID_CODE_PROGRESS:END -->
