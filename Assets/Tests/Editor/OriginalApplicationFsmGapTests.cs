@@ -13,6 +13,7 @@ using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using UnityEngine.SocialPlatforms;
+using CameraType = HardlightProject.CameraType;
 using Object = UnityEngine.Object;
 
 namespace ProjectLucid.Tests
@@ -940,6 +941,216 @@ namespace ProjectLucid.Tests
             }
         }
 
+        // FSMState_TriggerCharacterCamera 0x0600233f..42, x86-64 0x585490..0x585650. The
+        // CinemachineCameraManager reference is a field initializer; InvokeTriggerStart
+        // requests the override type and InvokeTriggerEnd requests CameraType.None
+        // through RequestCharacterCameraChange (0x714e40), each only when
+        // SystemRef.IsNull (0xc071d0) is false. Ending with the override type, or
+        // dropping the IsNull guard, fails here.
+        [Test]
+        public void TriggerCharacterCameraTakesTheCameraOnEnterAndReleasesItOnLeave()
+        {
+            string json = "{\"ActiveEventType\":2,\"CameraTypeOverride\":" + (int)CameraType.AttachedToPoint + "}";
+            using (var owned = new OwnedServices())
+            {
+                CinemachineCameraManager manager = owned.RegisterCameraManager();
+                FieldInfo handle = typeof(CinemachineCameraManager).GetField("m_playerCharacterHandle", Instance);
+                IFSMState trigger = FSMState_TriggerCharacterCamera.ConstructInstance(Machine(), Name(), json);
+                FSMUser user = User();
+                trigger.OnEnter(user, null);
+                Assert.That(handle.GetValue(manager), Is.Not.Null, "entering takes the character camera handle");
+                Assert.That(ActiveCamera(manager), Is.EqualTo(CameraType.AttachedToPoint));
+                trigger.OnLeave(user, null);
+                Assert.That(handle.GetValue(manager), Is.Null, "leaving requests no camera type");
+                Assert.That(ActiveCamera(manager), Is.EqualTo(CameraType.None));
+            }
+            using (var owned = new OwnedServices())
+            {
+                owned.Row<CinemachineCameraManager>();
+                IFSMState trigger = FSMState_TriggerCharacterCamera.ConstructInstance(Machine(), Name(), json);
+                FSMUser user = User();
+                Assert.DoesNotThrow(() => trigger.OnEnter(user, null), "an empty row is skipped on entry");
+                Assert.DoesNotThrow(() => trigger.OnLeave(user, null), "and on leave");
+            }
+        }
+
+        // FSMState_TriggerCamera.InvokeTriggerStart 0x0600233d, x86-64 0x584f10: after the
+        // SystemRef IsNull guard, TryGetValue<StackableDataHandle>(FSMStorageKeys.CameraOverride)
+        // (0x951d20) selects the path. A stored handle is reapplied with the new type
+        // (0x71a540) and stored, or for None released (0x7155c0) and removed; without one,
+        // None does nothing and any other type takes a new handle (0x715420) that is
+        // stored. Taking a handle for None, or replacing a stored handle, fails here.
+        [Test]
+        public void TriggerCameraReusesOrReleasesTheUsersOverrideHandle()
+        {
+            using (var owned = new OwnedServices())
+            {
+                CinemachineCameraManager manager = owned.RegisterCameraManager();
+                FiniteStateMachine machine = Machine();
+                IFSMState none = TriggerCamera(machine, CameraType.None);
+                IFSMState attached = TriggerCamera(machine, CameraType.AttachedToPoint);
+                IFSMState climbing = TriggerCamera(machine, CameraType.Climbing);
+                FSMUser user = User();
+
+                none.OnEnter(user, null);
+                Assert.That(user.Storage.HasValue<StackableDataHandle>(FSMStorageKeys.CameraOverride), Is.False, "None takes no handle");
+                Assert.That(ActiveCamera(manager), Is.EqualTo(CameraType.None));
+
+                attached.OnEnter(user, null);
+                StackableDataHandle handle = user.Storage.GetValueOnly<StackableDataHandle>(FSMStorageKeys.CameraOverride);
+                Assert.That(handle, Is.Not.Null);
+                Assert.That(ActiveCamera(manager), Is.EqualTo(CameraType.AttachedToPoint));
+
+                climbing.OnEnter(user, null);
+                Assert.That(user.Storage.GetValueOnly<StackableDataHandle>(FSMStorageKeys.CameraOverride), Is.SameAs(handle), "the stored handle is reapplied");
+                Assert.That(ActiveCamera(manager), Is.EqualTo(CameraType.Climbing));
+
+                none.OnEnter(user, null);
+                Assert.That(user.Storage.HasValue<StackableDataHandle>(FSMStorageKeys.CameraOverride), Is.False, "None releases the stored handle");
+                Assert.That(ActiveCamera(manager), Is.EqualTo(CameraType.None));
+            }
+        }
+
+        // FSMState_TriggerCutscene 0x06002344..46, x86-64 0x5856e0..0x5857f0.
+        // ConstructInstance parses CutsceneTriggerType with EnumUtilities.Parse (0x907ac0)
+        // and copies PreloadOnly. InvokeTriggerStart resolves GetSystem<CutsceneManager>
+        // first; a CutsceneDefinition queued under AppFSMKeys.CutsceneQueued (HasValue
+        // 0x9514c0) is read, passed to LoadCutscene (0x7a07d0) with play = !PreloadOnly,
+        // and removed. Preloading the cutscene already loading without play returns
+        // early, so the queued definition is consumed and nothing is promoted. Leaving the
+        // queue in place, or playing a preload, fails here.
+        [Test]
+        public void TriggerCutsceneConsumesAQueuedCutsceneWithoutPlayingAPreload()
+        {
+            var actionRows = new VerificationFixtureOwnership.ActionRows(SystemAction.Initialise, SystemAction.Shutdown);
+            CutsceneManager manager = null;
+            VerificationFixtureOwnership.RunThenCleanUp(() =>
+            {
+                using (var owned = new OwnedServices())
+                {
+                    owned.ReadOnlyRow<FullscreenShaderManager>();
+                    owned.ReadOnlyRow<VisualQualityManager_SDT>();
+                    owned.ReadOnlyRow<CinemachineCameraManager>();
+                    owned.Row<CutsceneManager>();
+                    CutsceneDefinition definition = ScriptableObject.CreateInstance<CutsceneDefinition>();
+                    try
+                    {
+                        manager = new CutsceneManager();
+                        SetCutscene(manager, "m_cutsceneIsLoading", true);
+                        SetCutscene(manager, "m_loadingCutscene", definition);
+                        IFSMState preload = FSMState_TriggerCutscene.ConstructInstance(Machine(), Name(),
+                            "{\"ActiveEventType\":0,\"CutsceneTriggerType\":\"EndCredits\",\"PreloadOnly\":true}");
+                        Assert.That(typeof(FSMState_TriggerCutscene).GetField("m_cutsceneTriggerType", Instance).GetValue(preload), Is.EqualTo(CutsceneTriggerType.EndCredits));
+                        Assert.That(typeof(FSMState_TriggerCutscene).GetField("m_preloadOnly", Instance).GetValue(preload), Is.True);
+                        FSMUser user = User();
+                        user.Storage.SetValue(AppFSMKeys.CutsceneQueued, definition);
+                        preload.OnEnter(user, null);
+                        Assert.That(user.Storage.HasValue<CutsceneDefinition>(AppFSMKeys.CutsceneQueued), Is.False, "the queued cutscene is consumed");
+                        Assert.That(typeof(CutsceneManager).GetField("m_cutscenePlayOnLoad", Instance).GetValue(manager), Is.False,
+                            "a preload does not promote the loading cutscene to play");
+                    }
+                    finally
+                    {
+                        Object.DestroyImmediate(definition);
+                        owned.AdoptCurrent<CutsceneManager>();
+                    }
+                }
+            },
+            () =>
+            {
+                if (manager != null) ProcessManager.UnsubscribeFromAllActions(manager);
+            },
+            actionRows.Dispose);
+        }
+
+        // FSMState_TriggerCutscene.InvokeTriggerStart 0x06002346, x86-64 0x5857f0. Without a
+        // queued cutscene it tail-calls PreloadAnyValidCutscene (0x79c2e0) when
+        // PreloadOnly, otherwise PlayAnyValidCutscene (0x79c250), both with a null
+        // callback. Those need the App's cutscene definitions, so this compares the IL
+        // call order and which branch each call sits on.
+        [Test]
+        public void TriggerCutsceneChoosesPreloadOrPlayByPreloadOnly()
+        {
+            MethodInfo start = typeof(FSMState_TriggerCutscene).GetMethod("InvokeTriggerStart", Instance | BindingFlags.DeclaredOnly);
+            List<Instruction> body = Read(start);
+            List<Instruction> calls = body.Where(i => i.Code == OpCodes.Call || i.Code == OpCodes.Callvirt).ToList();
+            string storage = typeof(IGraphStorage).FullName;
+            string definition = typeof(CutsceneDefinition).FullName;
+            string[] expected =
+            {
+                typeof(ProcessManager).FullName + "::GetSystem<" + typeof(CutsceneManager).FullName + ">",
+                typeof(IGraphUser).FullName + "::get_Storage",
+                typeof(IGraphStorageExtensions).FullName + "::HasValue<" + definition + ">",
+                typeof(IGraphUser).FullName + "::get_Storage",
+                storage + "::GetValue<" + definition + ">",
+                typeof(CutsceneManager).FullName + "::LoadCutscene",
+                typeof(IGraphUser).FullName + "::get_Storage",
+                storage + "::RemoveValue<" + definition + ">",
+                typeof(CutsceneManager).FullName + "::PreloadAnyValidCutscene",
+                typeof(CutsceneManager).FullName + "::PlayAnyValidCutscene",
+            };
+            Assert.That(calls.Select(c => Describe(start, c)).ToArray(), Is.EqualTo(expected));
+
+            // The first branch after the queued group reads m_preloadOnly, and a false value
+            // jumps past the preload to the Play call.
+            int remove = body.IndexOf(calls[7]);
+            Instruction branch = body.Skip(remove).First(IsConditional);
+            Assert.That(body.Skip(remove).Take(body.IndexOf(branch) - remove)
+                .Any(i => i.Code == OpCodes.Ldfld && start.Module.ResolveField(i.Operand).Name == "m_preloadOnly"), Is.True);
+            int target = body.FindIndex(i => i.Offset == branch.Target);
+            int preload = body.IndexOf(calls[8]);
+            int play = body.IndexOf(calls[9]);
+            bool falseJumps = branch.Code == OpCodes.Brfalse || branch.Code == OpCodes.Brfalse_S;
+            Assert.That(falseJumps, Is.True, "a false PreloadOnly jumps");
+            Assert.That(target > preload && target <= play, Is.True, "the jump skips the preload to the play call");
+        }
+
+        // FSMState_TriggerScreenControls.InvokeTriggerStart 0x06002350, x86-64 0x586340:
+        // the user is cast with GetAs<Character> (0x952720), GetSystemSafe<MessageManager>
+        // (0x98f7b0) can be null and skips the publish, and only then is an Action over
+        // OnRequestComplete (0x06002351, an empty body) built for
+        // ComponentMessagesWithCompletion.PublishMessage<ScreenControlsRequestMessage>
+        // (0x7ba400) with timeout -1. Its subscribers are keyed by a live Character, so
+        // this compares the IL call order and the arguments.
+        [Test]
+        public void TriggerScreenControlsPublishesItsGroupFromTheCharacterWhenMessagesExist()
+        {
+            MethodInfo start = typeof(FSMState_TriggerScreenControls).GetMethod("InvokeTriggerStart", Instance | BindingFlags.DeclaredOnly);
+            List<Instruction> body = Read(start);
+            List<Instruction> calls = body.Where(i => i.Code == OpCodes.Call || i.Code == OpCodes.Callvirt || i.Code == OpCodes.Newobj).ToList();
+            Type exchange = typeof(MessageExchangeWithCompletion<Component>);
+            string[] expected =
+            {
+                typeof(IGraphUserExtensions).FullName + "::GetAs<" + typeof(Character).FullName + ">",
+                typeof(ProcessManager).FullName + "::GetSystemSafe<" + typeof(MessageManager).FullName + ">",
+                typeof(Action).FullName + "::.ctor",
+                exchange.FullName + "::PublishMessage<" + typeof(ScreenControlsRequestMessage).FullName + ">",
+            };
+            Assert.That(calls.Select(c => Describe(start, c)).ToArray(), Is.EqualTo(expected));
+            // The override field is read only after GetSystemSafe returns (+0x28 load at 0x5863ee
+            // follows the call at 0x5863e9), so the message is built after the lookup.
+            Instruction group = body.Single(i => i.Code == OpCodes.Ldfld && start.Module.ResolveField(i.Operand).Name == "m_screenControlsGroupOverride");
+            Assert.That(group.Offset, Is.GreaterThan(calls[1].Offset), "the group is read after GetSystemSafe");
+
+            Instruction callback = body[body.IndexOf(calls[2]) - 1];
+            Assert.That(callback.Code, Is.EqualTo(OpCodes.Ldftn));
+            Assert.That(start.Module.ResolveMethod(callback.Operand).Name, Is.EqualTo("OnRequestComplete"));
+            Assert.That(body[body.IndexOf(calls[3]) - 1].Code, Is.EqualTo(OpCodes.Ldc_I4_M1), "the timeout is -1");
+            Instruction guard = body.Take(body.IndexOf(calls[2])).Last(IsConditional);
+            Assert.That(guard.Target, Is.GreaterThan(calls[3].Offset), "a missing MessageManager skips the publish");
+            MethodInfo complete = typeof(FSMState_TriggerScreenControls).GetMethod("OnRequestComplete", Instance);
+            List<Instruction> empty = Read(complete);
+            Assert.That(empty.Last().Code, Is.EqualTo(OpCodes.Ret));
+            Assert.That(empty.Take(empty.Count - 1).All(i => i.Code == OpCodes.Nop), Is.True, "the completion callback is empty");
+        }
+
+        private static IFSMState TriggerCamera(FiniteStateMachine machine, CameraType cameraType) =>
+            FSMState_TriggerCamera.ConstructInstance(machine, Name(),
+                "{\"ActiveEventType\":0,\"CameraTypeOverride\":" + (int)cameraType + "}");
+
+        private static CameraType ActiveCamera(CinemachineCameraManager manager) =>
+            manager.GetCameraSettingOverride<CameraType>(CameraSettingType.ActiveCamera);
+
         private static void SetReady(App app, bool ready) =>
             typeof(App).GetField("<IsReady>k__BackingField", Instance).SetValue(app, ready);
 
@@ -1025,6 +1236,20 @@ namespace ProjectLucid.Tests
                 FullscreenShaderManager manager = AddTimeScaled<FullscreenShaderManager>();
                 typeof(FullscreenShaderManager).GetField("m_fullscreenShaderMaterial", Instance).SetValue(manager, material);
                 m_rows[ProcessManager.GetDefaultName<FullscreenShaderManager>()].Register(manager);
+                return manager;
+            }
+
+            // An inactive camera manager whose Awake never runs. Its camera list stays the
+            // empty one supplied here, so UpdateCameras only rebuilds the override stack.
+            public CinemachineCameraManager RegisterCameraManager()
+            {
+                ReadOnlyRow<SaveManager>();
+                ReadOnlyRow<CameraStackManager>();
+                Row<CinemachineCameraManager>();
+                CinemachineCameraManager manager = AddTimeScaled<CinemachineCameraManager>();
+                FieldInfo cameras = typeof(CinemachineCameraManager).GetField("m_virtualCamerasByType", Instance);
+                cameras.SetValue(manager, Activator.CreateInstance(cameras.FieldType));
+                m_rows[ProcessManager.GetDefaultName<CinemachineCameraManager>()].Register(manager);
                 return manager;
             }
 
