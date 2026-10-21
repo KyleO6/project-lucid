@@ -674,6 +674,110 @@ namespace ProjectLucid.Tests
             }
         }
 
+        // ApplicationStateLoadingInitialiseSystems.ConstructInstance 0x060007c7, x86-64
+        // 0x65a9a0, resolves EventId with ApplicationStateEvent.FindByName (0x53b620)
+        // before allocating. PublishMessage 0x060007c9 (0x65ad80), which the
+        // CharacterManager's initialised callback runs, reads the entering user's
+        // IGraphStorage.GetValue<List<ApplicationStateEvent>>(StateEvents, null, true)
+        // and tail-calls ListExtensions.AddUnique<object> (0x96ffa0). Publishing into the
+        // App's list, or adding without the uniqueness check, fails here.
+        [Test]
+        public void LoadingInitialiseSystemsPublishesIntoTheUsersStorageOnce()
+        {
+            using (var owned = new OwnedServices())
+            {
+                owned.Row<App>();
+                App app = owned.RegisterApp();
+                ApplicationStateEvent stateEvent = ScriptableObject.CreateInstance<ApplicationStateEvent>();
+                try
+                {
+                    stateEvent.name = Name();
+                    var appEvents = new List<ApplicationStateEvent>();
+                    app.Storage.SetValue(AppFSMKeys.StateEvents, appEvents);
+                    FSMUser user = User();
+                    var userEvents = new List<ApplicationStateEvent>();
+                    user.Storage.SetValue(AppFSMKeys.StateEvents, userEvents);
+                    IFSMState state = ApplicationStateLoadingInitialiseSystems.ConstructInstance(Machine(), Name(), StateMessageJson(stateEvent));
+                    Assert.That(state, Is.TypeOf<ApplicationStateLoadingInitialiseSystems>());
+                    MethodInfo publish = typeof(ApplicationStateLoadingInitialiseSystems).GetMethod("PublishMessage", Instance);
+                    publish.Invoke(state, new object[] { user });
+                    publish.Invoke(state, new object[] { user });
+                    Assert.That(userEvents, Is.EqualTo(new[] { stateEvent }), "the resolved event is published once into the user's list");
+                    Assert.That(appEvents, Is.Empty, "the App's list is not the target");
+                }
+                finally { Object.DestroyImmediate(stateEvent); }
+            }
+        }
+
+        // ApplicationStateLoadingInitialiseSystems.DoOnEnter 0x060007c8, x86-64 0x65aa40.
+        // Entering constructs every level system, including a CharacterManager that
+        // preloads the character FSMs through App.DataManager, so this compares the
+        // rebuilt IL with the native order: FSMState.DoOnEnter (0x1ac3530),
+        // GetSystem<LevelManager> (0x98ea70) and ManagedSystems (+0x70), the placement
+        // manager added by instance (0x95c080), UnregisterSystem<ProcMeshPlacementUpdater>
+        // (0x98fd70) before RegisterSystem (0x1b11080) of its new updater, the seven
+        // parameterless AddManagedSystem<T> (0x95bf80) in native order, the
+        // CharacterManager added by instance with a callback to PublishMessage, then
+        // SystemRef<SaveManager>.TryGet (0xc07280) and the GameIsPlaying store (+0x39).
+        // Reordering the systems, or a callback that does not publish, fails here.
+        [Test]
+        public void LoadingInitialiseSystemsAddsTheLevelSystemsInNativeOrder()
+        {
+            Type state = typeof(ApplicationStateLoadingInitialiseSystems);
+            MethodInfo enter = state.GetMethod("DoOnEnter", Instance | BindingFlags.DeclaredOnly);
+            Assert.That(enter, Is.Not.Null);
+            List<Instruction> body = Read(enter);
+            List<Instruction> calls = body.Where(i => i.Code == OpCodes.Call || i.Code == OpCodes.Callvirt || i.Code == OpCodes.Newobj).ToList();
+            Type closure = state.GetNestedType("<>c__DisplayClass5_0", BindingFlags.NonPublic);
+            Assert.That(closure, Is.Not.Null, "the original closure name");
+            string add = typeof(LevelManagerSystems).FullName + "::AddManagedSystem<";
+            string[] expected =
+            {
+                closure.FullName + "::.ctor",
+                typeof(FSMState).FullName + "::DoOnEnter",
+                typeof(ProcessManager).FullName + "::GetSystem<" + typeof(LevelManager).FullName + ">",
+                typeof(LevelManager).FullName + "::get_ManagedSystems",
+                typeof(ProceduralMesh_PlacementManager).FullName + "::.ctor",
+                add + typeof(ProceduralMesh_PlacementManager).FullName + ">",
+                typeof(ProcessManager).FullName + "::UnregisterSystem<" + typeof(ProcMeshPlacementUpdater).FullName + ">",
+                typeof(ProcMeshPlacementUpdater).FullName + "::.ctor",
+                typeof(ProcessManager).FullName + "::RegisterSystem",
+                add + typeof(SimplifiedBodyManager).FullName + ">",
+                add + typeof(CollectableManager).FullName + ">",
+                add + typeof(EnemyManager).FullName + ">",
+                add + typeof(MessageManager).FullName + ">",
+                add + typeof(GameplayIslandManager).FullName + ">",
+                add + typeof(EntityActivationManager).FullName + ">",
+                add + typeof(LevelRespawnPoints).FullName + ">",
+                typeof(Action).FullName + "::.ctor",
+                typeof(CharacterManager).FullName + "::.ctor",
+                add + typeof(CharacterManager).FullName + ">",
+                typeof(SystemRef<SaveManager>).FullName + "::TryGet",
+                typeof(SaveManager).FullName + "::set_GameIsPlaying",
+            };
+            Assert.That(calls.Select(c => Describe(enter, c)).ToArray(), Is.EqualTo(expected));
+
+            // The placement manager and the CharacterManager use the instance overload;
+            // the other seven use the parameterless one that keeps a valid system.
+            for (int i = 0; i < calls.Count; i++)
+            {
+                if (!expected[i].StartsWith(add)) continue;
+                Type first = enter.Module.ResolveMethod(calls[i].Operand).GetParameters()[0].ParameterType;
+                bool byInstance = i == 5 || i == 18;
+                Assert.That(first == typeof(bool), Is.Not.EqualTo(byInstance), expected[i]);
+            }
+
+            // The CharacterManager's callback is the closure method, which publishes.
+            Instruction callback = body[body.IndexOf(calls[16]) - 1];
+            Assert.That(callback.Code, Is.EqualTo(OpCodes.Ldftn));
+            MethodBase lambda = enter.Module.ResolveMethod(callback.Operand);
+            Assert.That(lambda.DeclaringType, Is.EqualTo(closure));
+            Assert.That(lambda.Name, Is.EqualTo("<DoOnEnter>b__0"));
+            List<Instruction> lambdaCalls = Read((MethodInfo)lambda).Where(i => i.Code == OpCodes.Call || i.Code == OpCodes.Callvirt).ToList();
+            Assert.That(lambdaCalls.Select(c => Describe((MethodInfo)lambda, c)).ToArray(),
+                Is.EqualTo(new[] { state.FullName + "::PublishMessage" }));
+        }
+
         private static string StateMessageJson(ApplicationStateEvent stateEvent) =>
             "{\"EventId\":\"" + stateEvent.name + "\"}";
 
