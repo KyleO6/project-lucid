@@ -14,11 +14,12 @@ import tarfile
 import tempfile
 import threading
 import time
+import types
 import unittest
 from unittest import mock
 import zipfile
 
-from tools.lucidlib.bootstrap import (CACHE_ROOT, REPO_ROOT, ToolError, bootstrap,
+from tools.lucidlib.bootstrap import (CACHE_ROOT, REPO_ROOT, ToolError, _communicate, _release_tree, bootstrap,
                                    download_artifact, managed_path, run_logged, run_owned,
                                    unpack_archive, validate_work_dir)
 from tools.lucidlib.recovery import _managed_files, classify_il, recover_code
@@ -417,6 +418,34 @@ class RecoverySafetyTests(unittest.TestCase):
                            "interrupt-bound.log", timeout=60)
         self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
 
+    def _unstoppable_group(self):
+        return (mock.patch("tools.lucidlib.bootstrap.group_has_live_members", return_value=True),
+                mock.patch("tools.lucidlib.bootstrap.TERM_GRACE_SECONDS", 0.2),
+                mock.patch("tools.lucidlib.bootstrap.KILL_WAIT_SECONDS", 0.2))
+
+    @unittest.skipUnless(os.name == "posix", "process-group teardown is POSIX-only")
+    def test_owned_interrupt_raises_tool_error_when_the_group_outlives_the_sigkill_bound(self):
+        # run_owned keeps the same contract: the final teardown barrier, which also fails
+        # here, must not replace the chained ToolError; its failure is noted instead.
+        live, grace, bound = self._unstoppable_group()
+        with live, grace, bound, mock.patch.object(subprocess.Popen, "communicate", side_effect=KeyboardInterrupt):
+            with self.assertRaises(ToolError) as caught:
+                run_owned([sys.executable, "-c", "import time; time.sleep(60)"], timeout=60)
+        self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
+        self.assertEqual(1, len(caught.exception.__notes__))
+        self.assertRegex(caught.exception.__notes__[0], r"^Final teardown also failed: .*after SIGKILL")
+
+    @unittest.skipUnless(os.name == "posix", "process-group teardown is POSIX-only")
+    def test_logged_interrupt_notes_the_failed_final_teardown(self):
+        live, grace, bound = self._unstoppable_group()
+        with live, grace, bound, mock.patch.object(subprocess.Popen, "wait", side_effect=KeyboardInterrupt):
+            with self.assertRaises(ToolError) as caught:
+                run_logged([sys.executable, "-c", "import time; time.sleep(60)"], self.work,
+                           "interrupt-bound-note.log", timeout=60)
+        self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
+        self.assertEqual(1, len(caught.exception.__notes__))
+        self.assertRegex(caught.exception.__notes__[0], r"^Final teardown also failed: .*after SIGKILL")
+
     @unittest.skipUnless(os.name == "posix", "process-group teardown is POSIX-only")
     def test_timeout_raises_when_the_group_outlives_the_sigkill_bound(self):
         # A group that still reports live members after SIGKILL must not let callers
@@ -496,6 +525,657 @@ class RecoverySafetyTests(unittest.TestCase):
         normal.write_bytes(b"MZ" + b"\0" * 30)
         (self.work / "script.json").write_text('{"addresses": []}')
         self.assertEqual(_managed_files(self.work), sorted([generated, normal]))
+
+
+
+class _Interrupter:
+    """An injected interruption owned by one test: once ready() holds it calls
+    _thread.interrupt_main() count times. That is the Python-level SIGINT simulation
+    through the installed handler, not a console CTRL_C_EVENT. It never fires if
+    readiness times out or it is cancelled first; cancel() also joins the thread."""
+
+    def __init__(self, ready, count=1, gap=0.1, timeout=30):
+        import _thread
+        self.cancelled = threading.Event()
+        self.fired = 0
+        self.timed_out = False
+
+        def run():
+            deadline = time.monotonic() + timeout
+            while not ready():
+                if self.cancelled.is_set():
+                    return
+                if time.monotonic() >= deadline:
+                    self.timed_out = True
+                    return
+                time.sleep(0.02)
+            for index in range(count):
+                if index:
+                    time.sleep(gap)
+                if self.cancelled.is_set():
+                    return
+                _thread.interrupt_main()
+                self.fired += 1
+        self.thread = threading.Thread(target=run, daemon=True)
+        self.thread.start()
+
+    def cancel(self):
+        self.cancelled.set()
+        self.thread.join(10)
+
+
+class _OwnedProcessCleanup:
+    """Failure cleanup for the processes a Windows fixture recorded. Every recorded
+    process is attempted, and the fixture's folder is removed only once every one is
+    confirmed stopped: TerminateProcess is asynchronous, so only WAIT_OBJECT_0 confirms
+    it, and OpenProcess failing with ERROR_INVALID_PARAMETER confirms the PID is gone.
+    kernel32 and last_error are injectable so failed outcomes can be controlled."""
+
+    _OPEN_ACCESS = 0x0001 | 0x00100000  # PROCESS_TERMINATE | SYNCHRONIZE
+    _WAIT_OBJECT_0, _WAIT_TIMEOUT, _WAIT_FAILED = 0, 0x102, 0xFFFFFFFF
+    _ERROR_INVALID_PARAMETER = 87
+
+    def __init__(self, kernel32, last_error, wait_ms=10000):
+        self.kernel32, self.last_error, self.wait_ms = kernel32, last_error, wait_ms
+
+    def stop(self, pid):
+        """None once the process is confirmed stopped, otherwise a diagnostic."""
+        handle = self.kernel32.OpenProcess(self._OPEN_ACCESS, False, pid)
+        if not handle:
+            error = self.last_error()
+            if error == self._ERROR_INVALID_PARAMETER:
+                return None
+            return f"process {pid}: OpenProcess failed with error {error}"
+        try:
+            terminate_error = None if self.kernel32.TerminateProcess(handle, 1) else self.last_error()
+            result = self.kernel32.WaitForSingleObject(handle, self.wait_ms)
+            if result == self._WAIT_OBJECT_0:
+                return None
+            if result == self._WAIT_TIMEOUT:
+                outcome = "WAIT_TIMEOUT"
+            elif result == self._WAIT_FAILED:
+                outcome = f"WAIT_FAILED with error {self.last_error()}"
+            else:
+                outcome = f"wait result {result:#x}"
+            if terminate_error is not None:
+                outcome = f"TerminateProcess failed with error {terminate_error}, then {outcome}"
+            return f"process {pid}: {outcome}"
+        finally:
+            self.kernel32.CloseHandle(handle)
+
+    def release(self, folder, pids):
+        """Stop every recorded process, then remove folder only if all are confirmed
+        stopped. Returns {pid: diagnostic} for those that are not; folder then stays."""
+        unconfirmed = {}
+        for pid in pids:
+            try:
+                diagnostic = self.stop(pid)
+            except Exception as error:  # keep attempting the remaining members
+                diagnostic = f"process {pid}: {error!r}"
+            if diagnostic is not None:
+                unconfirmed[pid] = diagnostic
+        if not unconfirmed:
+            shutil.rmtree(folder, True)
+        return unconfirmed
+
+
+class OwnedProcessCleanupTests(unittest.TestCase):
+    """Deterministic controls for _OwnedProcessCleanup with a scripted kernel32."""
+
+    class _Kernel32:
+        def __init__(self, opened=True, terminated=True, wait=0, open_raises=()):
+            self.opened, self.terminated, self.wait = opened, terminated, wait
+            self.open_raises, self.calls, self.closed = set(open_raises), [], []
+
+        def OpenProcess(self, access, inherit, pid):
+            self.calls.append(("open", pid))
+            if pid in self.open_raises:
+                raise OSError(f"injected OpenProcess fault for {pid}")
+            return 1000 + pid if self.opened else 0
+
+        def TerminateProcess(self, handle, code):
+            self.calls.append(("terminate", handle))
+            return 1 if self.terminated else 0
+
+        def WaitForSingleObject(self, handle, milliseconds):
+            self.calls.append(("wait", handle))
+            return self.wait
+
+        def CloseHandle(self, handle):
+            self.closed.append(handle)
+            return 1
+
+    def setUp(self):
+        CACHE_ROOT.mkdir(parents=True, exist_ok=True)
+        self.folder = Path(tempfile.mkdtemp(prefix="test-owned-cleanup-", dir=CACHE_ROOT))
+        self.addCleanup(shutil.rmtree, self.folder, True)
+        (self.folder / "level0.pid").write_text("11")
+
+    def _release(self, kernel32, pids=(11, 12), error=5):
+        return _OwnedProcessCleanup(kernel32, lambda: error).release(self.folder, list(pids))
+
+    def test_confirmed_stops_remove_the_folder(self):
+        kernel32 = self._Kernel32()
+        self.assertEqual({}, self._release(kernel32))
+        self.assertFalse(self.folder.exists())
+        self.assertEqual([1011, 1012], kernel32.closed)
+
+    def test_a_vanished_process_counts_as_stopped(self):
+        self.assertEqual({}, self._release(self._Kernel32(opened=False), error=87))
+        self.assertFalse(self.folder.exists())
+
+    def test_failed_termination_with_a_timed_out_wait_keeps_the_folder(self):
+        kernel32 = self._Kernel32(terminated=False, wait=0x102)
+        unconfirmed = self._release(kernel32)
+        self.assertEqual({11: "process 11: TerminateProcess failed with error 5, then WAIT_TIMEOUT",
+                          12: "process 12: TerminateProcess failed with error 5, then WAIT_TIMEOUT"}, unconfirmed)
+        self.assertTrue((self.folder / "level0.pid").exists())
+        self.assertEqual([1011, 1012], kernel32.closed)
+
+    def test_failed_termination_with_a_failed_wait_keeps_the_folder(self):
+        unconfirmed = self._release(self._Kernel32(terminated=False, wait=0xFFFFFFFF), pids=(11,))
+        self.assertEqual({11: "process 11: TerminateProcess failed with error 5, then WAIT_FAILED with error 5"},
+                         unconfirmed)
+        self.assertTrue(self.folder.exists())
+
+    def test_a_timed_out_wait_alone_is_not_a_confirmed_stop(self):
+        self.assertEqual({11: "process 11: WAIT_TIMEOUT"}, self._release(self._Kernel32(wait=0x102), pids=(11,)))
+        self.assertTrue(self.folder.exists())
+
+    def test_an_unopenable_process_is_not_a_confirmed_stop(self):
+        unconfirmed = self._release(self._Kernel32(opened=False), pids=(11,), error=5)
+        self.assertEqual({11: "process 11: OpenProcess failed with error 5"}, unconfirmed)
+        self.assertTrue(self.folder.exists())
+
+    def test_one_failing_member_does_not_stop_the_others_being_attempted(self):
+        kernel32 = self._Kernel32(open_raises={11})
+        unconfirmed = self._release(kernel32, pids=(11, 12, 13))
+        self.assertEqual([11], list(unconfirmed))
+        self.assertIn("injected OpenProcess fault for 11", unconfirmed[11])
+        self.assertEqual([("open", 11), ("open", 12), ("terminate", 1012), ("wait", 1012),
+                          ("open", 13), ("terminate", 1013), ("wait", 1013)], kernel32.calls)
+        self.assertTrue(self.folder.exists())
+
+
+class ReleaseTreeProvenanceTests(unittest.TestCase):
+    """A failed final teardown barrier never replaces the exception already propagating."""
+
+    class _Leader:
+        _lucid_job = None
+        pid = 0
+
+        def poll(self):
+            return None
+
+    def _release(self, pending):
+        with mock.patch("tools.lucidlib.bootstrap._stop_tool", side_effect=ToolError("barrier could not stop")):
+            _release_tree(self._Leader(), pending)
+
+    def test_a_pending_tool_error_keeps_its_cause_and_notes_the_barrier(self):
+        interruption = KeyboardInterrupt()
+        pending = ToolError("stop could not finish")
+        pending.__cause__ = interruption
+        self._release(pending)  # returns: the caller re-raises pending unchanged
+        self.assertIs(pending.__cause__, interruption)
+        self.assertEqual(["Final teardown also failed: barrier could not stop"], pending.__notes__)
+
+    def test_any_other_pending_exception_becomes_the_barrier_errors_cause(self):
+        interruption = KeyboardInterrupt()
+        with self.assertRaisesRegex(ToolError, "barrier could not stop") as caught:
+            self._release(interruption)
+        self.assertIs(caught.exception.__cause__, interruption)
+
+    def test_the_note_survives_without_add_note(self):
+        # Python 3.9 and 3.10 have no BaseException.add_note; the note still reaches __notes__.
+        class LegacyToolError(ToolError):
+            add_note = property(lambda self: (_ for _ in ()).throw(AttributeError("add_note")))
+
+        interruption = KeyboardInterrupt()
+        pending = LegacyToolError("stop could not finish")
+        pending.__cause__ = interruption
+        self.assertFalse(hasattr(pending, "add_note"))
+        self._release(pending)
+        self.assertIs(pending.__cause__, interruption)
+        self.assertEqual(["Final teardown also failed: barrier could not stop"], pending.__notes__)
+
+    def test_without_a_pending_exception_the_barrier_error_propagates(self):
+        with self.assertRaisesRegex(ToolError, "barrier could not stop") as caught:
+            self._release(None)
+        self.assertIsNone(caught.exception.__cause__)
+
+
+class ReaderCustodyTests(unittest.TestCase):
+    """The Windows communicate reader is owned by cleanup exactly when it runs, and the
+    final barrier fails, under the same pending policy, if it is still running after the
+    bounded join. Real threads on inert processes; every probe thread is released and
+    joined afterwards."""
+
+    class _Process:
+        _lucid_job = None
+        pid = 0
+        args = ["inert"]
+
+        def __init__(self, release=None):
+            self.release = release
+
+        def poll(self):
+            return 0
+
+        def communicate(self):
+            if self.release is not None:
+                self.release.wait()
+            return (b"", b"")
+
+    def setUp(self):
+        for patcher in (mock.patch("tools.lucidlib.bootstrap.group_has_live_members", return_value=False),
+                        mock.patch("tools.lucidlib.bootstrap.KILL_WAIT_SECONDS", 0.05)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def _windows_communicate(self, process):
+        with mock.patch("tools.lucidlib.bootstrap.os", types.SimpleNamespace(name="nt")):
+            return _communicate(process, 5)
+
+    def _stuck(self):
+        """An inert process whose published reader is held on an Event."""
+        release = threading.Event()
+        process = self._Process(release)
+        reader = threading.Thread(target=release.wait, daemon=True)
+        reader.start()
+        process._lucid_reader = reader
+        self.addCleanup(reader.join)
+        self.addCleanup(release.set)
+        return process
+
+    def test_a_reader_that_fails_to_start_is_never_handed_to_cleanup(self):
+        for failure in (RuntimeError("can't start new thread"), KeyboardInterrupt()):
+            process = self._Process()
+            with mock.patch.object(threading.Thread, "start", side_effect=failure):
+                with self.assertRaises(type(failure)) as caught:
+                    self._windows_communicate(process)
+            self.assertIs(caught.exception, failure)
+            self.assertFalse(hasattr(process, "_lucid_reader"))
+            _release_tree(process, failure)  # nothing to join: the primary failure stands alone
+            self.assertIsNone(failure.__cause__)
+            self.assertFalse(hasattr(failure, "__notes__"))
+
+    @unittest.skipUnless(hasattr(signal, "raise_signal"), "needs signal.raise_signal")
+    def test_an_interrupt_during_startup_waits_until_the_started_reader_has_an_owner(self):
+        release = threading.Event()
+        process = self._Process(release)
+        start = threading.Thread.start
+        published = []
+
+        def start_then_interrupt(thread):
+            start(thread)
+            self.addCleanup(thread.join)  # registered after release.set, so it runs first: release here too
+            self.addCleanup(release.set)
+            signal.raise_signal(signal.SIGINT)
+            published.append(hasattr(process, "_lucid_reader"))
+
+        self.addCleanup(release.set)
+        with mock.patch.object(threading.Thread, "start", start_then_interrupt):
+            with self.assertRaises(KeyboardInterrupt) as caught:
+                self._windows_communicate(process)
+        self.assertEqual([False], published)  # held across the gap, delivered after publication
+        self.assertTrue(process._lucid_reader.is_alive())
+        release.set()
+        _release_tree(process, caught.exception)
+        self.assertFalse(process._lucid_reader.is_alive())
+
+    def test_a_reader_that_stops_lets_the_barrier_complete(self):
+        process = self._Process()
+        self.assertEqual((b"", b""), self._windows_communicate(process))
+        _release_tree(process)
+        self.assertFalse(process._lucid_reader.is_alive())
+
+    def test_a_reader_outliving_the_join_fails_a_cleanup_only_barrier(self):
+        process = self._stuck()
+        with self.assertRaisesRegex(ToolError, "output reader .* still running") as caught:
+            _release_tree(process)
+        self.assertIsNone(caught.exception.__cause__)
+
+    def test_a_reader_outliving_the_join_is_caused_by_a_pending_interrupt(self):
+        process = self._stuck()
+        interruption = KeyboardInterrupt()
+        with self.assertRaisesRegex(ToolError, "output reader .* still running") as caught:
+            _release_tree(process, interruption)
+        self.assertIs(caught.exception.__cause__, interruption)
+
+    def test_a_reader_outliving_the_join_is_noted_on_a_pending_tool_error(self):
+        process = self._stuck()
+        interruption = KeyboardInterrupt()
+        pending = ToolError("stop could not finish")
+        pending.__cause__ = interruption
+        _release_tree(process, pending)  # returns: the caller re-raises pending unchanged
+        self.assertIs(pending.__cause__, interruption)
+        self.assertEqual(1, len(pending.__notes__))
+        self.assertRegex(pending.__notes__[0], r"^Final teardown also failed: The output reader .* still running")
+
+    def test_a_stop_failure_stays_primary_and_notes_the_stuck_reader(self):
+        process = self._stuck()
+        process.poll = lambda: None
+        with mock.patch("tools.lucidlib.bootstrap._stop_tool", side_effect=ToolError("barrier could not stop")):
+            with self.assertRaisesRegex(ToolError, "barrier could not stop") as caught:
+                _release_tree(process)
+        self.assertEqual(1, len(caught.exception.__notes__))
+        self.assertRegex(caught.exception.__notes__[0], r"^The output reader also failed to stop: .* still running")
+
+    def test_a_pending_tool_error_keeps_both_the_stop_and_reader_diagnostics(self):
+        process = self._stuck()
+        process.poll = lambda: None
+        interruption = KeyboardInterrupt()
+        pending = ToolError("stop could not finish")
+        pending.__cause__ = interruption
+        with mock.patch("tools.lucidlib.bootstrap._stop_tool", side_effect=ToolError("barrier could not stop")):
+            _release_tree(process, pending)  # returns: the caller re-raises pending unchanged
+        self.assertIs(pending.__cause__, interruption)
+        self.assertEqual(2, len(pending.__notes__))
+        self.assertEqual("Final teardown also failed: barrier could not stop", pending.__notes__[0])
+        self.assertRegex(pending.__notes__[1], r"^The output reader also failed to stop: .* still running")
+
+    def test_an_unexpected_stop_failure_propagates_after_every_cleanup_attempt(self):
+        process = self._stuck()
+        process.poll = lambda: None
+        job = mock.Mock()
+        job.active_processes.return_value = [1]
+        job.stop.side_effect = OSError("terminate failed")
+        process._lucid_job = job
+        with self.assertRaisesRegex(OSError, "terminate failed") as caught:
+            _release_tree(process)
+        job.close.assert_called_once_with()
+        self.assertRegex(caught.exception.__notes__[0], r"^The output reader also failed to stop")
+
+
+@unittest.skipUnless(os.name == "nt", "Job Object teardown is Windows-only")
+class WindowsJobTeardownTests(unittest.TestCase):
+    """Real Windows process trees (#458): a leader starts a child that starts a
+    grandchild, and the whole tree must have stopped before control returns to the
+    caller's cleanup, while an unrelated sentinel process keeps running."""
+
+    # argv: this code, level, folder, finish. Each level starts the next (up to level 2)
+    # before publishing its PID; the leader waits for the grandchild, then sleeps or exits.
+    _CHAIN = ("import os, subprocess, sys, time\n"
+              "code, level, folder, finish = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]\n"
+              "if level < 2:\n"
+              "    subprocess.Popen([sys.executable, '-c', code, code, str(level + 1), folder, finish])\n"
+              "tmp = os.path.join(folder, 'level%d.tmp' % level)\n"
+              "open(tmp, 'w').write(str(os.getpid()))\n"
+              "os.replace(tmp, os.path.join(folder, 'level%d.pid' % level))\n"
+              "if level == 0:\n"
+              "    end = time.monotonic() + 30\n"
+              "    while not os.path.exists(os.path.join(folder, 'level2.pid')) and time.monotonic() < end:\n"
+              "        time.sleep(0.02)\n"
+              "    if finish == 'exit':\n"
+              "        sys.exit(0)\n"
+              "time.sleep(60)\n")
+    _STILL_ACTIVE = 259
+
+    def setUp(self):
+        CACHE_ROOT.mkdir(parents=True, exist_ok=True)
+        self.work = Path(tempfile.mkdtemp(prefix="test-job-", dir=CACHE_ROOT))
+        # Registered first, so it runs last: after every other cleanup, it stops any
+        # recorded tree member and removes the folder only once all are confirmed stopped.
+        self.addCleanup(self._release_recorded)
+        import ctypes
+        from ctypes import wintypes
+        self.kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.kernel32.OpenProcess.restype = wintypes.HANDLE
+        self.kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        self.kernel32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, wintypes.LPDWORD]
+        self.kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        self.kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        self.kernel32.WaitForSingleObject.restype = wintypes.DWORD  # WAIT_FAILED is 0xFFFFFFFF, not -1
+        self.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        self.wintypes = wintypes
+        self.ctypes = ctypes
+        self.owned = _OwnedProcessCleanup(self.kernel32, ctypes.get_last_error)
+        self.tree = self.work / "tree"
+        self.tree.mkdir()
+        self.sentinel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+        self.addCleanup(self._stop_sentinel)
+
+    def _stop_sentinel(self):
+        self.sentinel.kill()
+        self.sentinel.wait(10)
+
+    def _release_recorded(self):
+        # Failure cleanup. Unconfirmed members keep the folder and their PID files, and
+        # are reported here; unittest reports this separately from the test's own result.
+        pids = [pid for pid in map(self._pid, range(3)) if pid is not None] if hasattr(self, "tree") else []
+        unconfirmed = self.owned.release(self.work, pids) if hasattr(self, "owned") else {}
+        if not hasattr(self, "owned"):
+            shutil.rmtree(self.work, True)  # setUp failed before any process could start
+        if unconfirmed:
+            raise AssertionError(f"Recorded tree members were not confirmed stopped; keeping {self.work}: "
+                                 + "; ".join(unconfirmed.values()))
+
+    def _pid(self, level):
+        path = self.tree / f"level{level}.pid"
+        return int(path.read_text()) if path.exists() else None
+
+    def _running(self, pid):
+        # Never os.kill(pid, 0) here: on Windows it terminates the process.
+        handle = self.kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        try:
+            code = self.wintypes.DWORD()
+            self.assertTrue(self.kernel32.GetExitCodeProcess(handle, self.ctypes.byref(code)))
+            return code.value == self._STILL_ACTIVE
+        finally:
+            self.kernel32.CloseHandle(handle)
+
+    def _command(self, finish="sleep"):
+        return [sys.executable, "-c", self._CHAIN, self._CHAIN, "0", str(self.tree), finish]
+
+    def _grandchild_ready(self):
+        return (self.tree / "level2.pid").exists()
+
+    def _interrupter(self, **options):
+        interrupter = _Interrupter(self._grandchild_ready, **options)
+        self.addCleanup(interrupter.cancel)
+        return interrupter
+
+    def _assert_tree_stopped(self, levels=(0, 1, 2)):
+        for level in levels:
+            pid = self._pid(level)
+            self.assertIsNotNone(pid, f"level {level} never started")
+            self.assertFalse(self._running(pid), f"level {level} was still running")
+        self.assertIsNone(self.sentinel.poll(), "the unrelated sentinel was stopped")
+
+    def _assert_interrupted_outside(self, call, function):
+        # A held interruption is delivered once the protected step has finished, so its
+        # traceback does not pass through the function it arrived in. (assertRaises would
+        # discard the traceback, so the interruption is caught here.)
+        try:
+            call()
+        except KeyboardInterrupt as error:
+            frames, tb = [], error.__traceback__
+            while tb is not None:
+                frames.append(tb.tb_frame.f_code.co_name)
+                tb = tb.tb_next
+            self.assertNotIn(function, frames, frames)
+            return
+        self.fail("no interruption reached the caller")
+
+    def test_interrupter_never_fires_after_its_readiness_times_out(self):
+        interrupter = _Interrupter(lambda: False, timeout=0.2)
+        interrupter.thread.join(5)
+        self.assertTrue(interrupter.timed_out)
+        self.assertEqual(0, interrupter.fired)
+
+    def test_logged_timeout_stops_the_whole_tree(self):
+        result = run_logged(self._command(), self.work, "job-timeout.log", timeout=3)
+        self.assertTrue(result["timed_out"])
+        self.assertNotEqual(0, result["returncode"])
+        self.assertIn("stopped the process", Path(result["log"]).read_text())
+        self._assert_tree_stopped()
+
+    def test_owned_timeout_stops_the_tree_before_raising(self):
+        with self.assertRaises(subprocess.TimeoutExpired):
+            run_owned(self._command(), timeout=3)
+        self._assert_tree_stopped()
+
+    def test_logged_run_stops_descendants_left_by_a_finished_leader(self):
+        result = run_logged(self._command("exit"), self.work, "job-orphan.log", timeout=30)
+        self.assertFalse(result["timed_out"])
+        self.assertEqual(0, result["returncode"])
+        self._assert_tree_stopped()
+
+    def test_owned_run_stops_descendants_left_by_a_finished_leader(self):
+        result = run_owned(self._command("exit"), timeout=30)
+        self.assertEqual(0, result.returncode)
+        self._assert_tree_stopped()
+
+    def test_owned_run_keeps_its_output_and_exit_code(self):
+        result = run_owned([sys.executable, "-c", "import sys; print('out'); sys.exit(3)"],
+                           timeout=30, capture_output=True, text=True)
+        self.assertEqual((3, "out"), (result.returncode, result.stdout.strip()))
+
+    def test_interrupt_stops_the_tree_before_the_caller_continues(self):
+        started = time.monotonic()
+        interrupter = self._interrupter()
+        with self.assertRaises(KeyboardInterrupt):
+            run_logged(self._command(), self.work, "job-interrupt.log", timeout=60)
+        interrupter.cancel()
+        self.assertEqual(1, interrupter.fired)
+        # The wait is sliced, so the interruption lands long before the timeout.
+        self.assertLess(time.monotonic() - started, 30)
+        self._assert_tree_stopped()
+        self.assertIn("after an interruption", (self.work / "reports" / "job-interrupt.log").read_text())
+
+    def test_owned_interrupt_stops_the_tree_before_the_caller_continues(self):
+        interrupter = self._interrupter()
+        with self.assertRaises(KeyboardInterrupt):
+            run_owned(self._command(), timeout=60)
+        interrupter.cancel()
+        self.assertEqual(1, interrupter.fired)
+        self._assert_tree_stopped()
+
+    def test_repeated_interrupt_during_the_stop_is_ignored(self):
+        # A second interruption while the job is being stopped must neither cut the stop
+        # short nor surface afterwards: SIGINT is ignored for the duration of the stop.
+        from tools.lucidlib import bootstrap
+        import _thread
+        real_stop = bootstrap._WindowsJob.stop
+        repeats = []
+
+        def stop_with_a_repeat(job, process):
+            _thread.interrupt_main()
+            repeats.append(True)
+            real_stop(job, process)
+        self._interrupter()
+        with mock.patch.object(bootstrap._WindowsJob, "stop", stop_with_a_repeat):
+            with self.assertRaises(KeyboardInterrupt):
+                run_logged(self._command(), self.work, "job-repeat.log", timeout=60)
+        time.sleep(0.2)  # a repeat that was not ignored would be raised by now
+        self.assertEqual([True], repeats)
+        self._assert_tree_stopped()
+
+    def _interrupt_during_handoff(self):
+        # The interruption arrives inside popen, after the tree is running in its job
+        # and before the process reaches the caller.
+        from tools.lucidlib import bootstrap
+        import _thread
+        real_resume = bootstrap._WindowsJob._resume
+        calls = []
+
+        def resume_then_interrupt(job, process):
+            real_resume(job, process)
+            deadline = time.monotonic() + 30
+            while not self._grandchild_ready() and time.monotonic() < deadline:
+                time.sleep(0.02)
+            self.assertTrue(self._grandchild_ready())
+            calls.append(process.pid)
+            _thread.interrupt_main()
+        return mock.patch.object(bootstrap._WindowsJob, "_resume", resume_then_interrupt), calls
+
+    def test_logged_interrupt_during_the_handoff_reaches_cleanup_with_the_tree_owned(self):
+        patch, calls = self._interrupt_during_handoff()
+        with patch:
+            self._assert_interrupted_outside(
+                lambda: run_logged(self._command(), self.work, "job-handoff.log", timeout=60), "resume_then_interrupt")
+        self.assertEqual(1, len(calls))
+        self._assert_tree_stopped()
+        self.assertIn("after an interruption", (self.work / "reports" / "job-handoff.log").read_text())
+
+    def test_owned_interrupt_during_the_handoff_reaches_cleanup_with_the_tree_owned(self):
+        patch, calls = self._interrupt_during_handoff()
+        with patch:
+            self._assert_interrupted_outside(lambda: run_owned(self._command(), timeout=60), "resume_then_interrupt")
+        self.assertEqual(1, len(calls))
+        self._assert_tree_stopped()
+
+    def _interrupt_during_the_exit_query(self):
+        # The first membership query is the normal-exit one; the interruption arrives
+        # inside it, after the leader has finished and while descendants still run.
+        from tools.lucidlib import bootstrap
+        import _thread
+        real_query, real_stop = bootstrap._WindowsJob.active_processes, bootstrap._WindowsJob.stop
+        events = []
+
+        def query(job):
+            if not events:
+                events.append("query")
+                _thread.interrupt_main()
+            return real_query(job)
+
+        def stop(job, process):
+            events.append("stop")
+            real_stop(job, process)
+        patches = (mock.patch.object(bootstrap._WindowsJob, "active_processes", query),
+                   mock.patch.object(bootstrap._WindowsJob, "stop", stop))
+        return patches, events
+
+    def test_logged_interrupt_during_the_exit_query_is_delivered_after_the_stop(self):
+        (query, stop), events = self._interrupt_during_the_exit_query()
+        with query, stop:
+            self._assert_interrupted_outside(
+                lambda: run_logged(self._command("exit"), self.work, "job-exit-query.log", timeout=30), "query")
+        self.assertEqual(["query", "stop"], events)
+        self._assert_tree_stopped()
+
+    def test_owned_interrupt_during_the_exit_query_is_delivered_after_the_stop(self):
+        (query, stop), events = self._interrupt_during_the_exit_query()
+        with query, stop:
+            self._assert_interrupted_outside(lambda: run_owned(self._command("exit"), timeout=30), "query")
+        self.assertEqual(["query", "stop"], events)
+        self._assert_tree_stopped()
+
+    def test_admission_failure_after_assignment_stops_the_job(self):
+        # Assigned but not resumed: the job is stopped and waited for, not just the
+        # immediate process killed.
+        from tools.lucidlib import bootstrap
+        leaders, stops = [], []
+        real_stop = bootstrap._WindowsJob.stop
+
+        def fail_resume(job, process):
+            leaders.append(process.pid)
+            raise ToolError("injected resume failure")
+
+        def stop(job, process):
+            stops.append(process.pid)
+            real_stop(job, process)
+        with mock.patch.object(bootstrap._WindowsJob, "_resume", fail_resume), \
+                mock.patch.object(bootstrap._WindowsJob, "stop", stop):
+            with self.assertRaisesRegex(ToolError, "injected resume failure"):
+                run_owned(self._command(), timeout=30)
+        self.assertEqual(leaders, stops)
+        self.assertFalse(self._running(leaders[0]))
+        self.assertIsNone(self.sentinel.poll())
+
+    def test_tree_that_outlives_the_bound_raises_tool_error(self):
+        from tools.lucidlib import bootstrap
+        with mock.patch.object(bootstrap._WindowsJob, "active_processes", return_value=1), \
+                mock.patch("tools.lucidlib.bootstrap.KILL_WAIT_SECONDS", 0.2):
+            with self.assertRaisesRegex(ToolError, "still running 0.2 seconds after its job"):
+                run_logged(self._command(), self.work, "job-bound.log", timeout=3)
+        # Closing the job still kills the tree (KILL_ON_JOB_CLOSE).
+        deadline = time.monotonic() + 5
+        while any(self._running(self._pid(level)) for level in range(3)) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self._assert_tree_stopped()
 
 
 class IlQualityTests(unittest.TestCase):
