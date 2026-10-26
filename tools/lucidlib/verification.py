@@ -1692,7 +1692,7 @@ EDITMODE_TESTS += (
 )
 
 EDITMODE_TESTS += (
-    "ProjectLucid.Editor.Tests.PortableControllerSelectionTests.DefaultSelectionUsesOriginalUnityProviderWithIndependentNotifications",
+    "ProjectLucid.Editor.Tests.PortableControllerSelectionTests.SelectionUsesTheInputSystemProviderWithIndependentNotifications",
     "ProjectLucid.Editor.Tests.PortableControllerSelectionTests.ConnectionNotificationWorksBeforeSubscriptionAndAfterUnsubscription",
 )
 
@@ -11119,4 +11119,14 @@ EDITMODE_TESTS += ("ProjectLucid.Tests.UIContainerGameCenterAccessPointTests.Sta
 EDITMODE_TESTS += tuple("ProjectLucid.Tests.SurfaceTrackingConeOperandTests." + name for name in (
     "InteriorAndExteriorPointsKeepTheirResults",
     "RotatedBoundaryPointsFollowTheOriginalOperand",
+))
+EDITMODE_TESTS += tuple("ProjectLucid.Editor.Tests.InputSystemControllerProviderTests." + name for name in (
+    "NotifiesOncePerPollAfterConnectDisconnectReplacementAndSwap",
+    "NamesLetTheAuthoredIdentifiersPickEachGlyphSet",
+    "BindingInputAndGlyphFollowEachGamepadThroughDisconnectReplacementAndReconnect",
+    "ReconnectingTheSameGamepadStartsAFreshButtonHistory",
+    "StoppingReleasesOnlyThatProvidersControllersAndRestartingRegistersAgain",
+    "PollReadsEveryGamepadControlInGameControllerLayout",
+    "SourceKeepsTheOriginalCastForGameControllerProvidersAndWithTheAdaptersOff",
+    "MonitorFixtureReleasesEveryBindingCloneItCreates",
 ))

@@ -50,7 +50,9 @@
     "Cinemachine",
     "ProjectLucid.Dreamteck.EngineVerification",
     "Unity.Timeline",
-    "HLAppleInput.Runtime"
+    "HLAppleInput.Runtime",
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework"
   ],
   "includePlatforms": [
     "Editor"

@@ -21,15 +21,17 @@ namespace ProjectLucid
             var loaded = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name == "HLInput.Runtime");
             Type owner = loaded.GetType("Hardlight.InputMonitor", true), marker = loaded.GetType("Hardlight.IInputMonitor", true), baseMarker = loaded.GetType("Hardlight.IBaseInputMonitor", true);
             // Preserve the complete original Input86 roster and account explicitly
-            // for the separate portable selection adapter in the same assembly.
+            // for the separate portable adapters in the same assembly: the selection
+            // and the Input System controller provider it returns (#454).
             string sourceRoot = Path.GetFullPath("Packages/com.hardlight.hlinput/Runtime");
-            string adapter = Path.GetFullPath("Packages/com.hardlight.hlinput/Runtime/Offline/PortableControllerSelection.cs");
+            string[] adapters = { Path.GetFullPath("Packages/com.hardlight.hlinput/Runtime/Offline/InputSystemControllerProvider.cs"), Path.GetFullPath("Packages/com.hardlight.hlinput/Runtime/Offline/PortableControllerSelection.cs") };
+            string adapterDirectory = Path.GetDirectoryName(adapters[0]) + Path.DirectorySeparatorChar;
             string[] actualSources = compiled.sourceFiles.Select(Path.GetFullPath).OrderBy(p => p, StringComparer.Ordinal).ToArray();
             string[] originalSources = Directory.GetFiles(sourceRoot, "*.cs", SearchOption.AllDirectories)
-                .Select(Path.GetFullPath).Where(p => p != adapter).OrderBy(p => p, StringComparer.Ordinal).ToArray();
-            Require(originalSources.Length == 86 && !originalSources.Any(p => p.StartsWith(Path.GetDirectoryName(adapter) + Path.DirectorySeparatorChar, StringComparison.Ordinal)), "Expected complete original Input86 sources outside the offline adapter directory.");
-            Require(actualSources.Length == 87 && actualSources.Distinct(StringComparer.Ordinal).Count() == 87 && actualSources.Count(p => p == adapter) == 1, "Expected original Input86 and exactly one separate portable selection source.");
-            Require(actualSources.Where(p => p != adapter).SequenceEqual(originalSources), "Actual compiled input sources differ from the complete maintained original roster.");
+                .Select(Path.GetFullPath).Where(p => !adapters.Contains(p)).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            Require(originalSources.Length == 86 && !originalSources.Any(p => p.StartsWith(adapterDirectory, StringComparison.Ordinal)), "Expected complete original Input86 sources outside the offline adapter directory.");
+            Require(actualSources.Length == 88 && actualSources.Distinct(StringComparer.Ordinal).Count() == 88 && adapters.All(a => actualSources.Count(p => p == a) == 1), "Expected original Input86 and exactly the two separate portable adapter sources.");
+            Require(actualSources.Where(p => !adapters.Contains(p)).SequenceEqual(originalSources), "Actual compiled input sources differ from the complete maintained original roster.");
             Require(loaded.FullName == "HLInput.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "Changed actual loaded assembly identity.");
             string installed = Path.GetFullPath(loaded.Location);
             Require(installed == Path.GetFullPath(compiled.outputPath), "Loaded input module differs from current compilation output.");
