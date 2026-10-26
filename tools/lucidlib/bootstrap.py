@@ -16,6 +16,7 @@ import stat
 import subprocess
 import tarfile
 import tempfile
+import threading
 import time
 import urllib.request
 import uuid
@@ -437,6 +438,281 @@ def unpack_archive(archive: Path, destination: Path, artifact: dict) -> None:
 
 TERM_GRACE_SECONDS = 5
 KILL_WAIT_SECONDS = 5
+# On Windows a blocking Popen wait defers Ctrl-C until it returns, and on Python 3.9 an
+# interruption during a Popen timeout can wait without bound for the child: its handler
+# passes the already expired, negative remaining time to WaitForSingleObject, which reads
+# it as INFINITE. Windows waits therefore poll and sleep in slices, since time.sleep is
+# interruptible there, and never pass a timeout to Popen.
+WINDOWS_WAIT_SLICE_SECONDS = 0.2
+
+
+class _WindowsJob:
+    """A Job Object that owns a tool's whole process tree on Windows (#458).
+
+    The tool starts suspended and runs only once it belongs to the job, so every
+    descendant it starts belongs to the job too. Terminating the job stops the
+    tree; closing it kills whatever is left (KILL_ON_JOB_CLOSE), so the tree also
+    dies with this process."""
+
+    _CREATE_SUSPENDED = 0x00000004
+    _KILL_ON_JOB_CLOSE = 0x00002000
+    _BASIC_ACCOUNTING = 1
+    _EXTENDED_LIMITS = 9
+
+    def __init__(self):
+        import ctypes
+        from ctypes import wintypes
+
+        class Basic(ctypes.Structure):
+            _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                        ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                        ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                        ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                        ("SchedulingClass", wintypes.DWORD)]
+
+        class Extended(ctypes.Structure):
+            _fields_ = [("BasicLimitInformation", Basic), ("IoInfo", ctypes.c_uint64 * 6),
+                        ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                        ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+        class Accounting(ctypes.Structure):
+            _fields_ = [("TotalUserTime", ctypes.c_int64), ("TotalKernelTime", ctypes.c_int64),
+                        ("ThisPeriodTotalUserTime", ctypes.c_int64), ("ThisPeriodTotalKernelTime", ctypes.c_int64),
+                        ("TotalPageFaultCount", wintypes.DWORD), ("TotalProcesses", wintypes.DWORD),
+                        ("ActiveProcesses", wintypes.DWORD), ("TotalTerminatedProcesses", wintypes.DWORD)]
+
+        self._ctypes = ctypes
+        self._Accounting = Accounting
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self._kernel32 = kernel32
+        self._ntdll = ctypes.WinDLL("ntdll")
+        kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+        kernel32.CreateJobObjectW.argtypes = [wintypes.LPVOID, wintypes.LPCWSTR]
+        kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+        kernel32.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID,
+                                                       wintypes.DWORD, wintypes.LPDWORD]
+        kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        self._ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
+        self._ntdll.NtResumeProcess.restype = ctypes.c_long
+        self._handle = kernel32.CreateJobObjectW(None, None)
+        if not self._handle:
+            raise ToolError(f"Could not create a job object: {ctypes.WinError(ctypes.get_last_error())}")
+        limits = Extended()
+        limits.BasicLimitInformation.LimitFlags = self._KILL_ON_JOB_CLOSE
+        if not kernel32.SetInformationJobObject(self._handle, self._EXTENDED_LIMITS, ctypes.byref(limits),
+                                                ctypes.sizeof(limits)):
+            error = ctypes.WinError(ctypes.get_last_error())
+            self.close()
+            raise ToolError(f"Could not configure the job object: {error}")
+
+    @classmethod
+    def popen(cls, command, **options) -> subprocess.Popen:
+        """Start the command suspended, place it in a new job, then let it run.
+
+        Called by _popen_tree with interruptions held, so only a real error can stop the
+        admission part way. Before assignment the process is suspended outside the job and
+        has started nothing; once assigned, the whole job is stopped and waited for."""
+        job = cls()
+        try:
+            options["creationflags"] = options.get("creationflags", 0) | cls._CREATE_SUSPENDED
+            process = subprocess.Popen(command, **options)
+        except BaseException:
+            job.close()
+            raise
+        assigned = False
+        try:
+            job._assign(process)
+            assigned = True
+            job._resume(process)
+        except BaseException as admission:
+            with _interrupts_deferred():
+                try:
+                    if assigned:
+                        job.stop(process)
+                    else:
+                        process.kill()
+                        process.wait()
+                except ToolError as stop_error:
+                    raise stop_error from admission
+                finally:
+                    job.close()
+            raise
+        process._lucid_job = job
+        return process
+
+    def _assign(self, process: subprocess.Popen) -> None:
+        ctypes = self._ctypes
+        if not self._kernel32.AssignProcessToJobObject(self._handle, int(process._handle)):
+            raise ToolError(f"Could not place process {process.pid} in its job: "
+                            f"{ctypes.WinError(ctypes.get_last_error())}")
+
+    def _resume(self, process: subprocess.Popen) -> None:
+        status = self._ntdll.NtResumeProcess(int(process._handle))
+        if status != 0:
+            raise ToolError(f"Could not resume process {process.pid}: NTSTATUS {status & 0xFFFFFFFF:#010x}")
+
+    def active_processes(self) -> int:
+        ctypes = self._ctypes
+        accounting = self._Accounting()
+        if not self._kernel32.QueryInformationJobObject(self._handle, self._BASIC_ACCOUNTING,
+                                                        ctypes.byref(accounting), ctypes.sizeof(accounting), None):
+            raise ToolError(f"Could not query the job object: {ctypes.WinError(ctypes.get_last_error())}")
+        return accounting.ActiveProcesses
+
+    def stop(self, process: subprocess.Popen) -> None:
+        """Terminate every process in the job and return only once all have exited."""
+        if self.active_processes() and not self._kernel32.TerminateJobObject(self._handle, 1):
+            ctypes = self._ctypes
+            raise ToolError(f"Could not terminate the job of process {process.pid}: "
+                            f"{ctypes.WinError(ctypes.get_last_error())}")
+        deadline = time.monotonic() + KILL_WAIT_SECONDS
+        while self.active_processes():
+            if time.monotonic() >= deadline:
+                process.poll()
+                raise ToolError(f"Process tree {process.pid} was still running {KILL_WAIT_SECONDS} "
+                                "seconds after its job was terminated")
+            time.sleep(0.05)
+        process.wait()
+
+    def close(self) -> None:
+        if self._handle:
+            self._kernel32.CloseHandle(self._handle)
+            self._handle = None
+
+
+def _popen_tree(command: list[str], owner: list, **options) -> subprocess.Popen:
+    """Popen that owns the command's whole tree: its own POSIX session, or a Windows job.
+
+    Interruptions are held from creation until the process is in owner, the caller's
+    list, so an interruption during the handoff reaches the caller's cleanup with the
+    process already in its custody."""
+    with _interrupts_held():
+        if os.name == "nt":
+            process = _WindowsJob.popen(command, **options)
+        else:
+            process = subprocess.Popen(command, start_new_session=True, **options)
+        owner.append(process)
+    return process
+
+
+def _stop_descendants(process: subprocess.Popen) -> None:
+    """After a leader exits normally, stop descendants it left running. The membership
+    query, the decision and the stop are one step: an interruption during it is held
+    and delivered once the tree has stopped."""
+    with _interrupts_held():
+        job = getattr(process, "_lucid_job", None)
+        if job is not None:
+            if job.active_processes():
+                job.stop(process)
+        elif os.name == "posix" and group_has_live_members(process.pid):
+            # Live descendants retain the group id after its leader is reaped.
+            stop_process_group(process)
+
+
+def _add_note(error: BaseException, note: str) -> None:
+    """BaseException.add_note, which Python 3.9 and 3.10 lack: there the note is kept in
+    the same __notes__ list, which 3.11 and later also display in tracebacks."""
+    if hasattr(error, "add_note"):
+        error.add_note(note)
+    else:
+        error.__notes__ = [*getattr(error, "__notes__", ()), note]
+
+
+def _release_tree(process: subprocess.Popen, pending: BaseException | None = None) -> None:
+    """The barrier before the caller cleans up, on every path: nothing of the tree is
+    still running afterwards, the Windows job handle is closed, and the output reader has
+    stopped. A reader still running after the bounded join fails the barrier; a stop
+    failure stays primary and notes the reader's.
+
+    pending is the exception the caller is already propagating. A failed barrier never
+    replaces it: a pending ToolError already reports that the tree could not be confirmed
+    stopped, and keeps its own cause with the barrier's failure and that failure's notes
+    added as notes; any other pending exception becomes the cause of the barrier's
+    ToolError."""
+    job = getattr(process, "_lucid_job", None)
+    with _interrupts_deferred():
+        failure = None
+        try:
+            try:
+                if job is not None:
+                    if job.active_processes():
+                        job.stop(process)
+                elif process.poll() is None or (os.name == "posix" and group_has_live_members(process.pid)):
+                    _stop_tool(process)
+            except ToolError as error:
+                failure = error
+            except BaseException as error:
+                failure = error
+                raise
+        finally:
+            if job is not None:
+                job.close()
+            reader = getattr(process, "_lucid_reader", None)
+            if reader is not None:
+                # The tree has stopped or the job is closed, so its pipes reach EOF.
+                reader.join(KILL_WAIT_SECONDS)
+                if reader.is_alive():
+                    reader_error = ToolError(f"The output reader for process {process.pid} was still "
+                                             f"running {KILL_WAIT_SECONDS} seconds after teardown")
+                    if failure is None:
+                        failure = reader_error
+                    else:
+                        _add_note(failure, f"The output reader also failed to stop: {reader_error}")
+        if failure is not None:
+            if isinstance(pending, ToolError):
+                _add_note(pending, f"Final teardown also failed: {failure}")
+                for note in getattr(failure, "__notes__", ()):  # e.g. a reader that also failed to stop
+                    _add_note(pending, note)
+                return
+            if pending is None:
+                raise failure
+            raise failure from pending
+
+
+def _wait(process: subprocess.Popen, timeout: float) -> int:
+    """process.wait(timeout); on Windows a poll between interruptible sleeps."""
+    if os.name != "nt":
+        return process.wait(timeout=timeout)
+    deadline = time.monotonic() + timeout
+    while process.poll() is None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(process.args, timeout)
+        time.sleep(min(WINDOWS_WAIT_SLICE_SECONDS, remaining))
+    return process.returncode
+
+
+def _communicate(process: subprocess.Popen, timeout: float):
+    """process.communicate(timeout). On Windows an untimed communicate runs on a reader
+    thread while this thread sleeps in interruptible slices; the reader stays with the
+    process, and _release_tree joins it once the tree has stopped."""
+    if os.name != "nt":
+        return process.communicate(timeout=timeout)
+    result = {}
+
+    def collect():
+        try:
+            result["output"] = process.communicate()
+        except BaseException as error:
+            result["error"] = error
+
+    reader = threading.Thread(target=collect, name=f"communicate-{process.pid}", daemon=True)
+    with _interrupts_held():
+        # Published only once started, and with no gap in between: _release_tree joins
+        # exactly the readers that run.
+        reader.start()
+        process._lucid_reader = reader
+    deadline = time.monotonic() + timeout
+    while reader.is_alive():
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(process.args, timeout)
+        time.sleep(min(WINDOWS_WAIT_SLICE_SECONDS, remaining))
+    if "error" in result:
+        raise result["error"]
+    return result["output"]
 
 
 def group_has_live_members(pgid: int) -> bool:
@@ -494,6 +770,25 @@ def stop_process_group(process: subprocess.Popen) -> None:
 
 
 @contextmanager
+def _interrupts_held():
+    """Hold SIGINT while a block runs and deliver it afterwards: the block completes, and
+    an interruption that arrived during it then goes to the previous handler (a
+    KeyboardInterrupt under Python's default; nothing if it was ignored)."""
+    held = []
+    try:
+        previous = signal.signal(signal.SIGINT, lambda signum, frame: held.append(signum))
+    except ValueError:  # not the main thread: signals cannot be changed here
+        yield
+        return
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous)
+    if held and callable(previous):
+        previous(signal.SIGINT, None)
+
+
+@contextmanager
 def _interrupts_deferred():
     """Ignore SIGINT while a tool is being stopped, so a repeated Ctrl-C cannot cut the stop short."""
     try:
@@ -513,8 +808,13 @@ def _stop_tool(process: subprocess.Popen) -> None:
         if os.name == "posix":
             stop_process_group(process)
             return
-        # Known gap (#458): Windows stops only the immediate process, not
-        # its tree. POSIX group ownership is #235.
+        job = getattr(process, "_lucid_job", None)
+        if job is not None:
+            # Windows has no SIGTERM to offer a grace period: TerminateProcess is the
+            # only stop, so the whole job is terminated at once (#458).
+            job.stop(process)
+            return
+        # A process started without a job: only the immediate process can be stopped.
         process.terminate()
         try:
             process.wait(timeout=TERM_GRACE_SECONDS)
@@ -534,23 +834,30 @@ def run_owned(command: list[str], *, timeout: float, capture_output: bool = Fals
     The command runs as its own session leader. A timeout or interruption stops the
     group before the original error propagates, and descendants that outlive a
     finished leader are stopped too, so callers never release a lock or remove a
-    tree while part of the command still runs. Windows stops only the immediate
-    process (#458)."""
+    tree while part of the command still runs. On Windows the tree is a Job Object
+    (#458)."""
     if capture_output:
         options["stdout"] = options["stderr"] = subprocess.PIPE
-    process = subprocess.Popen(command, start_new_session=True, text=text, **options)
+    owner = []
+    pending = None
     try:
-        stdout, stderr = process.communicate(timeout=timeout)
-    except BaseException as interruption:
         try:
-            _stop_tool(process)
-        except ToolError as stop_error:
-            raise stop_error from interruption
+            process = _popen_tree(command, owner, text=text, **options)
+            stdout, stderr = _communicate(process, timeout)
+        except BaseException as interruption:
+            if owner:
+                try:
+                    _stop_tool(owner[0])
+                except ToolError as stop_error:
+                    raise stop_error from interruption
+            raise
+        _stop_descendants(process)
+    except BaseException as error:
+        pending = error
         raise
-    if os.name == "posix" and group_has_live_members(process.pid):
-        # The group outlives its reaped leader, so its id cannot be reused yet.
-        with _interrupts_deferred():
-            stop_process_group(process)
+    finally:
+        if owner:
+            _release_tree(owner[0], pending)
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
@@ -583,33 +890,40 @@ def run_logged(command: list[str], work_dir: Path, log_name: str, *, timeout: in
     with _open_log(log) as stream:
         stream.write(json.dumps({"command": command, "cwd": str(location)}) + "\n")
         stream.flush()
-        process = subprocess.Popen(command, cwd=location, env=env, stdin=subprocess.DEVNULL,
-                                   stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+        owner = []
         timed_out = False
+        pending = None
         try:
-            returncode = process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            timed_out = True
-            _stop_tool(process)
-            returncode = process.returncode
-            stream.write(f"\nRecovery wrapper stopped the process after {timeout} seconds.\n")
-        except BaseException as interruption:
-            # Ctrl-C or any other abort: callers remove working trees and release locks
-            # next, so the tool must have stopped first. SIGINT is ignored while stopping,
-            # so a repeated Ctrl-C does not abandon the group. The original exception
-            # propagates, except that a ToolError replaces it (chained as its cause) when
-            # the tool cannot be stopped, so callers do not treat the tree as stopped.
             try:
+                process = _popen_tree(command, owner, cwd=location, env=env, stdin=subprocess.DEVNULL,
+                                      stdout=stream, stderr=subprocess.STDOUT)
+                returncode = _wait(process, timeout)
+            except subprocess.TimeoutExpired:
+                timed_out = True
                 _stop_tool(process)
-                stream.write("\nRecovery wrapper stopped the process after an interruption.\n")
-            except ToolError as stop_error:
-                raise stop_error from interruption
+                returncode = process.returncode
+                stream.write(f"\nRecovery wrapper stopped the process after {timeout} seconds.\n")
+            except BaseException as interruption:
+                # Ctrl-C or any other abort: callers remove working trees and release locks
+                # next, so the tool must have stopped first. SIGINT is ignored while stopping,
+                # so a repeated Ctrl-C does not abandon the group. The original exception
+                # propagates, except that a ToolError replaces it (chained as its cause) when
+                # the tool cannot be stopped, so callers do not treat the tree as stopped.
+                if owner:
+                    try:
+                        _stop_tool(owner[0])
+                        stream.write("\nRecovery wrapper stopped the process after an interruption.\n")
+                    except ToolError as stop_error:
+                        raise stop_error from interruption
+                raise
+            else:
+                _stop_descendants(process)
+        except BaseException as error:
+            pending = error
             raise
-        else:
-            if os.name == "posix" and group_has_live_members(process.pid):
-                # Live descendants retain the group id after its leader is reaped.
-                with _interrupts_deferred():
-                    stop_process_group(process)
+        finally:
+            if owner:
+                _release_tree(owner[0], pending)
     return {"command": command, "log": str(log), "returncode": returncode,
             "timed_out": timed_out, "elapsed_seconds": round(time.monotonic() - started, 3)}
 

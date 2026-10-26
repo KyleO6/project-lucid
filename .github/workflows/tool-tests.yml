@@ -42,6 +42,33 @@ jobs:
         env:
           LUCID_CI_SANDBOX_ROOT: '1'
 
+  python-windows:
+    # A real Windows runner for the Job Object process-tree teardown (#458). The rest of
+    # tools/tests assumes POSIX paths and runs on Ubuntu above. 3.9 is the supported
+    # minimum, whose Popen interruption handling differs on Windows.
+    name: Python process trees (windows-2025, ${{ matrix.python }})
+    runs-on: windows-2025
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.9', '3.13']
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - name: Require the requested commit for explicit checks
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+        run: test -z "$EXPECTED_HEAD" || test "$GITHUB_SHA" = "$EXPECTED_HEAD"
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest tools.tests.test_recovery -v
+
   artifact-identity:
     name: C# identity (${{ matrix.os }})
     runs-on: ubuntu-24.04

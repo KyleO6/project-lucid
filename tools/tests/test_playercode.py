@@ -355,7 +355,11 @@ class PlayerCodeTests(unittest.TestCase):
         self.assertEqual((3, "owned stdout\n", ""), (result.returncode, result.stdout, result.stderr))
         self.assertEqual(command, result.args)
         launch.assert_called_once()
-        self.assertTrue(launch.call_args.kwargs.get("start_new_session", False))
+        if os.name == "nt":
+            # Windows owns the tree through a Job Object; the leader starts suspended until it joins (#458).
+            self.assertTrue(launch.call_args.kwargs.get("creationflags", 0) & 0x00000004)
+        else:
+            self.assertTrue(launch.call_args.kwargs.get("start_new_session", False))
 
     def _editor_tree_releases_lock_after_stop(self, completion):
         # Inert Python processes exercise the real launcher and command lock. The child and
