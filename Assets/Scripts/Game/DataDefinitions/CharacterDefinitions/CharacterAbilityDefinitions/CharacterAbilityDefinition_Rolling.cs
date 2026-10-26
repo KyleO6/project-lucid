@@ -11,10 +11,10 @@ namespace HardlightProject
 	public class CharacterAbilityDefinition_Rolling : CharacterAbilityDefinition_MovementGround
 	{
 		[Tooltip("When speed falls below threshold, rolling state is exited after specified time.")]
-		public float AutoExitSpeedThreshold;
+		public float AutoExitSpeedThreshold = 5f;
 
 		[Tooltip("When speed is above threshold, ignore ledge braking.")]
-		public float LedgeBrakingSpeedThreshold;
+		public float LedgeBrakingSpeedThreshold = 50f;
 
 		public override Type ScriptType
 		{

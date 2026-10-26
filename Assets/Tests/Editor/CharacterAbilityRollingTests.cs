@@ -36,6 +36,26 @@ namespace ProjectLucid.Tests
             });
         }
 
+        // Original CharacterAbilityDefinition_Rolling constructor 06001b86 (x86-64
+        // 0x545160) copies the pair at VA 0x29A77E0 (5, 50) into
+        // AutoExitSpeedThreshold (+0x11C) and LedgeBrakingSpeedThreshold (+0x120)
+        // with one movsd. Fails if either field initializer is dropped, which
+        // leaves the threshold at zero for definitions created from the menu.
+        [Test]
+        public void DefinitionStartsWithTheNativeSpeedThresholds()
+        {
+            var definition = UnityEngine.ScriptableObject.CreateInstance<CharacterAbilityDefinition_Rolling>();
+            try
+            {
+                Assert.AreEqual(5f, definition.AutoExitSpeedThreshold);
+                Assert.AreEqual(50f, definition.LedgeBrakingSpeedThreshold);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
         // Original 060011c1 (x86-64 0x74B100) returns true when
         // IsRollingTriggered (+0xE8) is set, otherwise IsRollingExiting (+0xE9).
         // The flags are set directly here; in the original, UpdateTrigger
