@@ -105,16 +105,13 @@ namespace ProjectLucid.Tests
                     foreach (LocalKeyword keyword in ShaderUtil.GetPassKeywords(shader,
                         new PassIdentifier(0, (uint)pass), type, ShaderCompilerPlatform.Metal))
                     { actual.Add(keyword.name); union.Add(keyword.name); }
-                    Assert.That(actual, Is.EquivalentTo(expected), "Original Metal pass " + pass + " " + type);
+                    ImportedKeywordContext.AssertPass(actual, expected, "Original Metal pass " + pass + " " + type);
                 }
             }
             Assert.That(indices.Count, Is.EqualTo(49));
             foreach (int index in indices)
             {
-                LocalKeyword keyword = shader.keywordSpace.FindKeyword(names[index]);
-                Assert.That(keyword.isValid, Is.True, names[index]);
-                Assert.That(keyword.isDynamic, Is.EqualTo((flags[index] & 2) != 0), names[index]);
-                Assert.That(keyword.isOverridable, Is.EqualTo((flags[index] & 1) == 0), names[index]);
+                ImportedKeywordContext.AssertKeyword(shader, names[index], flags[index]);
             }
             // These table names have no surviving pass mask; no stripped body/active pragma is fabricated.
             foreach (int index in new[] { 47, 48, 49 }) Assert.That(union.Contains(names[index]), Is.False, names[index]);

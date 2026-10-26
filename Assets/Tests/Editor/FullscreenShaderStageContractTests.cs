@@ -61,7 +61,15 @@ namespace ProjectLucid.Tests
             Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
             Assert.That(shader, Is.Not.Null, path);
             Assert.That(AssetDatabase.AssetPathToGUID(path), Is.EqualTo(guid));
-            Assert.That(shader.passCount, Is.EqualTo(passCount));
+            // The pass count of a URP-tagged subshader depends on the active pipeline tag, so the check runs
+            // under URP's and restores the previous one.
+            string pipeline = Shader.globalRenderPipeline;
+            try
+            {
+                Shader.globalRenderPipeline = "UniversalPipeline";
+                Assert.That(shader.passCount, Is.EqualTo(passCount));
+            }
+            finally { Shader.globalRenderPipeline = pipeline; }
             foreach (ShaderMessage message in ShaderUtil.GetShaderMessages(shader))
                 Assert.That(message.severity, Is.Not.EqualTo(ShaderCompilerMessageSeverity.Error), message.message);
             for (int pass = 0; pass < passCount; pass++)
@@ -72,15 +80,12 @@ namespace ProjectLucid.Tests
                     foreach (LocalKeyword keyword in ShaderUtil.GetPassKeywords(shader,
                         new PassIdentifier(0, (uint)pass), stage, ShaderCompilerPlatform.Metal))
                         actual.Add(keyword.name);
-                    Assert.That(actual, Is.EquivalentTo(names), path + " pass " + pass + " " + stage);
+                    ImportedKeywordContext.AssertPass(actual, names, path + " pass " + pass + " " + stage);
                 }
             }
             for (int index = 0; index < names.Length; index++)
             {
-                LocalKeyword keyword = shader.keywordSpace.FindKeyword(names[index]);
-                Assert.That(keyword.isValid, Is.True, names[index]);
-                Assert.That(keyword.isDynamic, Is.EqualTo((flags[index] & 2) != 0), names[index]);
-                Assert.That(keyword.isOverridable, Is.EqualTo((flags[index] & 1) == 0), names[index]);
+                ImportedKeywordContext.AssertKeyword(shader, names[index], flags[index]);
             }
         }
 

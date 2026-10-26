@@ -76,15 +76,12 @@ namespace ProjectLucid.Tests
                         actual.Add(keyword.name);
                         actualUnion.Add(keyword.name);
                     }
-                    Assert.That(actual, Is.EquivalentTo(expected), "Original Metal pass " + pass + " " + type + " mask");
+                    ImportedKeywordContext.AssertPass(actual, expected, "Original Metal pass " + pass + " " + type + " mask");
                 }
             }
             foreach (int index in activeIndices)
             {
-                LocalKeyword keyword = shader.keywordSpace.FindKeyword(names[index]);
-                Assert.That(keyword.isValid, Is.True, names[index]);
-                Assert.That(keyword.isDynamic, Is.EqualTo((flags[index] & 2) != 0), names[index]);
-                Assert.That(keyword.isOverridable, Is.EqualTo((flags[index] & 1) == 0), names[index]);
+                ImportedKeywordContext.AssertKeyword(shader, names[index], flags[index]);
             }
             // These serialized table entries have no pass mask; no stripped bodies/pragmas are invented.
             foreach (int index in new[] { 47, 48, 49 }) Assert.That(actualUnion.Contains(names[index]), Is.False, names[index]);

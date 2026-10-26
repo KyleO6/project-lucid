@@ -62,15 +62,12 @@ namespace ProjectLucid.Tests
                         actualNames.Add(keyword.name);
                         actualPassNames.Add(keyword.name);
                     }
-                    Assert.That(actualNames, Is.EquivalentTo(expectedNames), "Original Metal pass " + pass + " " + type + " keyword mask");
+                    ImportedKeywordContext.AssertPass(actualNames, expectedNames, "Original Metal pass " + pass + " " + type + " keyword mask");
                 }
             }
             foreach (int index in expectedIndices)
             {
-                LocalKeyword keyword = shader.keywordSpace.FindKeyword(names[index]);
-                Assert.That(keyword.isValid, Is.True, names[index]);
-                Assert.That(keyword.isDynamic, Is.EqualTo((flags[index] & 2) != 0), names[index]);
-                Assert.That(keyword.isOverridable, Is.EqualTo((flags[index] & 1) == 0), names[index]);
+                ImportedKeywordContext.AssertKeyword(shader, names[index], flags[index]);
             }
             // Index25 is a global table name with no surviving pass mask; no pass or stripped body is invented for it.
             Assert.That(actualPassNames.Contains(names[25]), Is.False);
@@ -81,10 +78,9 @@ namespace ProjectLucid.Tests
         {
             Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
             Assert.That(shader, Is.Not.Null);
-            // The original keyword table marks this name dynamic (flag 0x02) on the shipped Metal path.
-            LocalKeyword keyword = shader.keywordSpace.FindKeyword("_FOVEATED_RENDERING_NON_UNIFORM_RASTER");
-            Assert.That(keyword.isValid, Is.True);
-            Assert.That(keyword.isDynamic, Is.True);
+            // The original keyword table marks this name dynamic (flag 0x02) on the shipped Metal path. Where the
+            // active target cannot declare it (Core RP's predicate), it must be absent instead.
+            ImportedKeywordContext.AssertKeyword(shader, ImportedKeywordContext.Foveated, 2);
         }
 
         [Test]
