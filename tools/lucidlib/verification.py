@@ -273,6 +273,13 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.FullscreenShaderStageContractTests."
     "FullscreenAndBlurKeepFloat4FragmentContracts",
 ))
 
+# Build-target-qualified imported keyword expectations (#524).
+EDITMODE_TESTS += tuple("ProjectLucid.Tests.ImportedKeywordContextTests." + name for name in (
+    "OnlyTheCoreRpPredicateTargetsDeclareFoveated",
+    "ImportedMaskDropsOnlyFoveatedWhereItCannotBeDeclared",
+    "KeywordMismatchesAreRejectedInEitherContext",
+))
+
 # Original FastAction null conversion and checked mutation order (#469).
 EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalFastActionNullListenerTests." + name for name in (
     "NullListenerReturnsTheSameInstanceForTheSelfType",
