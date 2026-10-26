@@ -2866,6 +2866,7 @@ EDITMODE_TESTS += (
 EDITMODE_TESTS += (
     "ProjectLucid.Tests.CharacterAbilityRollingTests.LeaveClearsTriggeredAndExitingFlags",
     "ProjectLucid.Tests.CharacterAbilityRollingTests.IsTriggeredReportsTriggeredOrExiting",
+    "ProjectLucid.Tests.CharacterAbilityRollingTests.DefinitionStartsWithTheNativeSpeedThresholds",
 )
 
 # Original ability interface edges (metadata 0x02000081 -> IAbilityTrigger, 0x02000310 -> IAbility).
