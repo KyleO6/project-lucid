@@ -229,6 +229,8 @@ namespace HardlightProject
         public static PerformanceProfile GetDefaultPerformanceProfile(Dictionary<RuntimePlatform, DevicePerformance> devicePerformanceMatches, PerformanceProfile defaultProfile = null)
         {
             RuntimePlatform platform = Application.platform;
+            if (ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-072: the Windows and Linux players look up the macOS player's device performance definition
+                platform = RuntimePlatform.OSXPlayer;
             if (devicePerformanceMatches.ContainsKey(platform))
                 return devicePerformanceMatches[platform].GetMatch();
             return defaultProfile;
@@ -275,7 +277,10 @@ namespace HardlightProject
         // 06002dd8: original macOS player-only display-change handling, no new port policy.
         private void ValidateResolution()
         {
-            if (Application.platform != RuntimePlatform.OSXPlayer) return;
+            if (ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-073: the Windows and Linux players follow display changes as the macOS player does (the original platform return stays in the else branch)
+            {
+            }
+            else if (Application.platform != RuntimePlatform.OSXPlayer) return;
             DisplayInfo display = Screen.mainWindowDisplayInfo;
             Vector2Int resolution = new Vector2Int(display.width, display.height);
             if (m_cachedResolution != Vector2Int.zero)

@@ -59,7 +59,13 @@ namespace HardlightProject
             if (OfflineAdapters.Active && OfflineDesktopPlatform.IsCurrent)
                 OfflineAppleSplash.Arm(this, user, m_sceneName);
             base.DoOnEnter(user, action);
-            if (Application.platform == RuntimePlatform.OSXPlayer)
+            if (ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-070: the Windows and Linux players take the original macOS player display setup (the original platform branch stays in the else branch)
+            {
+                DisplayInfo displayInfo = Screen.mainWindowDisplayInfo;
+                Screen.SetResolution(displayInfo.width, displayInfo.height,
+                    Screen.fullScreenMode, new RefreshRate { numerator = 1, denominator = 60 });
+            }
+            else if (Application.platform == RuntimePlatform.OSXPlayer)
             {
                 DisplayInfo displayInfo = Screen.mainWindowDisplayInfo;
                 Screen.SetResolution(displayInfo.width, displayInfo.height,
