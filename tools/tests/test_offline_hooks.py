@@ -101,6 +101,19 @@ class OfflineHookRegistryTests(unittest.TestCase):
             with self.subTest(file=rel):
                 self.assertTrue(rel.startswith("Assets/Tests/") or "/Tests/" in rel, "OfflineAdapters.Override outside a Tests folder")
 
+    def test_the_platform_override_is_only_called_from_test_folders(self):
+        seam_file = "Packages/com.hardlight.hlunitycore/Runtime/Offline/OfflineDesktopPlatform.cs"
+        callers = []
+        for top in ("Assets", "Packages"):
+            for path in sorted((ROOT / top).rglob("*.cs")):
+                rel = path.relative_to(ROOT).as_posix()
+                if rel != seam_file and "OfflineDesktopPlatform.OverridePlatform(" in path.read_text(encoding="utf-8"):
+                    callers.append(rel)
+        self.assertTrue(callers, "the platform override is used by the tests")
+        for rel in callers:
+            with self.subTest(file=rel):
+                self.assertTrue(rel.startswith("Assets/Tests/") or "/Tests/" in rel, "OfflineDesktopPlatform.OverridePlatform outside a Tests folder")
+
     def test_hook_ids_are_unique_in_the_registry_and_numbered_with_three_digits(self):
         ids = [line.split("|")[1].strip() for line in REGISTRY.read_text(encoding="utf-8").split("\n") if ROW.match(line)]
         self.assertEqual(len(ids), len(set(ids)))

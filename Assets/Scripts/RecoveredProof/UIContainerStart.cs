@@ -163,7 +163,9 @@ namespace HardlightProject
             yield return UpdateChallengesUI(currentSave);
             if (currentSave.HasChangesToSave()) saveManager.RequestSave();
             UINavigationManager navigationManager = ProcessManager.GetSystem<UINavigationManager>();
-            if (navigationManager != null && !navigationManager.IsActive && Application.platform == RuntimePlatform.OSXPlayer)
+            if (navigationManager != null && !navigationManager.IsActive
+                && ((ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-074: the Windows and Linux players show the hardware cursor as the macOS player does (the original platform test follows)
+                    || Application.platform == RuntimePlatform.OSXPlayer))
             {
                 HLInputModule inputModule = EventSystem.current.currentInputModule as HLInputModule;
                 if (inputModule != null) inputModule.SetHardwareCursorVisibility(true);

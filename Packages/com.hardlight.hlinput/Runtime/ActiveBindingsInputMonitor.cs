@@ -66,7 +66,12 @@ namespace Hardlight
             BaseSourceProvider.Shutdown();
         }
 
-        protected override bool IsActiveOnPlatform() => ArrayExtensions.Contains(m_activePlatforms, Application.platform); // Original06000180.
+        protected override bool IsActiveOnPlatform() // Original06000180.
+        {
+            if (ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-076: the Windows and Linux players are active wherever the authored list names the macOS player
+                return ArrayExtensions.Contains(m_activePlatforms, RuntimePlatform.OSXPlayer);
+            return ArrayExtensions.Contains(m_activePlatforms, Application.platform);
+        }
         public override void Update() { base.Update(); BaseSourceProvider.Update(); } // Original06000181.
 
         // Original06000182 captures both arguments before processor shutdown.

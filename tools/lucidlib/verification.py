@@ -11074,3 +11074,16 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OriginalApplicationFsmGapTests." + n
     "PostLevelLoadResetRebuildsThePoolsThenSwapsTheCameraAndRestarts",
     "InitialiseHLCrashReportStartsOnlyWhenCrashReportsAreEnabled",
 ))
+
+# Windows and Linux players take the shipped macOS player branches (#503, H-070..H-076).
+EDITMODE_TESTS += tuple("ProjectLucid.Tests.OfflinePlatformHookTests." + name for name in (
+    "OnlyTheWindowsAndLinuxPlayersTakeTheMacPlayerBranch",
+    "InputMonitorsAreActiveOnWindowsAndLinuxWhereTheListNamesTheMacPlayer",
+    "DefaultPerformanceProfileUsesTheMacDefinitionOnWindowsAndLinux",
+    "BootDisplaySetupHookRepeatsTheMacPlayerBranch",
+    "ResolutionSettingHookSkipsTheOriginalPlatformReturn",
+    "DisplayChangeHookSkipsTheOriginalPlatformReturn",
+    "StartScreenCursorHookReachesTheCursorBody",
+    "HookPolarityCheckRejectsInvertedConditions",
+))
+EDITMODE_TESTS += ("ProjectLucid.Tests.UIContainerGameCenterAccessPointTests.StartEnablesTheCanvasScalerOnWindowsAndLinuxPlayersAsOnMacOS",)

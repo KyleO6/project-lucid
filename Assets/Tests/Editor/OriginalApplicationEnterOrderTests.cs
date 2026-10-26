@@ -113,6 +113,17 @@ namespace ProjectLucid.Tests
             };
             CollectionAssert.AreEqual(hook, calls.Take(hook.Length).Select(c => Describe(enter, c)).ToArray());
             calls = calls.Skip(hook.Length).ToList();
+            // Offline hook H-070 follows the base enter; the original platform branch follows it unchanged.
+            string[] platformHook =
+            {
+                "ProjectLucid.Offline.OfflineAdapters::get_Active",
+                "ProjectLucid.Offline.OfflineDesktopPlatform::get_IsMacPlayerEquivalent",
+                Call(typeof(Screen), "get_mainWindowDisplayInfo"),
+                Call(typeof(Screen), "get_fullScreenMode"),
+                Call(typeof(Screen), "SetResolution"),
+            };
+            CollectionAssert.AreEqual(platformHook, calls.Skip(1).Take(platformHook.Length).Select(c => Describe(enter, c)).ToArray());
+            calls.RemoveRange(1, platformHook.Length);
             Type levels = typeof(Dictionary<string, AsyncOperationHandle>);
             string[] expected =
             {

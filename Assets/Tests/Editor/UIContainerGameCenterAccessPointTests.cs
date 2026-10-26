@@ -137,6 +137,32 @@ namespace ProjectLucid.Tests
             });
         }
 
+        // Offline hook H-075: the Windows and Linux players enable the canvas scaler as the macOS player does; the
+        // glyph stays an iOS and tvOS extra. With the adapters off the original platform test runs (the editor).
+        [Test]
+        public void StartEnablesTheCanvasScalerOnWindowsAndLinuxPlayersAsOnMacOS()
+        {
+            foreach (RuntimePlatform player in new[] { RuntimePlatform.WindowsPlayer, RuntimePlatform.LinuxPlayer })
+            {
+                WithContainer(true, (owned, rig) =>
+                {
+                    rig.Scaler.enabled = false;
+                    using (ProjectLucid.Offline.OfflineDesktopPlatform.OverridePlatform(player))
+                        Call(rig.Container, "Start");
+                    Assert.That(rig.Scaler.enabled, Is.True, player.ToString());
+                    Assert.That(rig.Container.ShouldDisplayGlyph.Value, Is.False, player.ToString());
+                });
+                WithContainer(true, (owned, rig) =>
+                {
+                    rig.Scaler.enabled = true;
+                    using (ProjectLucid.Offline.OfflineDesktopPlatform.OverridePlatform(player))
+                    using (ProjectLucid.Offline.OfflineAdapters.Override(false))
+                        Call(rig.Container, "Start");
+                    Assert.That(rig.Scaler.enabled, Is.False, player + " original platform test in the editor");
+                });
+            }
+        }
+
         // OnDestroy 0x631d70 stops the delayed routine, hides the access point (unavailable here, so no plugin call)
         // and clears the manager's active flag (byte +0x10 = 0).
         [Test]

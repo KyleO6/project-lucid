@@ -16,7 +16,10 @@ namespace HardlightProject
         // Display dimensions precede clamping; fullscreen mode is read afterward.
         public override void Apply()
         {
-            if (Application.platform != RuntimePlatform.OSXPlayer)
+            if (ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-071: the Windows and Linux players apply the setting as the macOS player does (the original platform return stays in the else branch)
+            {
+            }
+            else if (Application.platform != RuntimePlatform.OSXPlayer)
                 return;
             DisplayInfo info = Screen.mainWindowDisplayInfo;
             Vector2Int resolution = GetClampedResolution(new Vector2Int(info.width, info.height));

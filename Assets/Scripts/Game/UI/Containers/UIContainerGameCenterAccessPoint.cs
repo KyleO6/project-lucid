@@ -46,7 +46,10 @@ namespace HardlightProject
             Visible.Value = false;
             m_cachedVisible = false;
             m_gameCenterAccessPointRef.Get().IsActive = true;
-            m_canvasScaler.enabled = Application.platform == RuntimePlatform.OSXPlayer;
+            if (ProjectLucid.Offline.OfflineAdapters.Active && ProjectLucid.Offline.OfflineDesktopPlatform.IsMacPlayerEquivalent) // Offline hook H-075: the Windows and Linux players use the canvas scaler as the macOS player does (the original statement stays in the else branch)
+                m_canvasScaler.enabled = true;
+            else
+                m_canvasScaler.enabled = Application.platform == RuntimePlatform.OSXPlayer;
             ShouldDisplayGlyph.Value = Application.platform == RuntimePlatform.IPhonePlayer
                 || Application.platform == RuntimePlatform.tvOS;
         }
