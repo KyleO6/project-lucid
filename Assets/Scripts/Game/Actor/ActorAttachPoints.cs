@@ -1,5 +1,4 @@
-// Complete original Actor attachment dispatch candidate; real ActorAttachNode required.
-// Private, no source/engine/behavior acceptance or substituted dependencies.
+// Original Actor attachment dispatch over ActorAttachNode.
 using System;
 using System.Collections.Generic;
 using UnityEngine;

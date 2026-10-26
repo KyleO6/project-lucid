@@ -24,7 +24,7 @@ namespace Hardlight
             return true;
         }
 
-        // 06000247: maintained original body, zero additional recovered credit.
+        // 06000247: maintained original body.
         public static bool Contains<T>(this T[] array, T item)
         {
             return Array.IndexOf(array, item) >= 0;

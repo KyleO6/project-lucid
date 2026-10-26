@@ -3,8 +3,7 @@ using System.Collections.Generic;
 
 namespace Hardlight
 {
-    // HLUnityCore02000072: complete five-method original owner. AddUnique and
-    //AddUniqueFromRange reuse the maintained bodies with zero new-method credit.
+    // HLUnityCore02000072: complete five-method original owner.
     public static class ListExtensions
     {
         //060002c2, reference shared ARM9551ac: keep the authentic IReadOnlyList
@@ -16,7 +15,7 @@ namespace Hardlight
             return index != -1;
         }
 
-        //Maintained060002c3 body, zero new credit. Null list and collection
+        //Maintained060002c3 body. Null list and collection
         //callback errors escape exactly as in the original provider.
         public static bool AddUnique<T>(this IList<T> list, T entry)
         {
@@ -25,7 +24,7 @@ namespace Hardlight
             return !contains;
         }
 
-        //Maintained060002c4 body, zero new credit. Every AddUnique executes after
+        //Maintained060002c4 body. Every AddUnique executes after
         //the first success; exceptions retain earlier additions and disposal.
         public static bool AddUniqueFromRange<T>(this IList<T> list, IReadOnlyCollection<T> entries)
         {

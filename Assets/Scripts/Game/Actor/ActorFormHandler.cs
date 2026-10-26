@@ -1,5 +1,4 @@
-// Complete original Actor form-handler source candidate. Private and unaccepted.
-// The real Actor/character dependency graph is required; no substitutes are supplied.
+// Original Actor form handler.
 using System;
 using System.Collections.Generic;
 using UnityEngine;

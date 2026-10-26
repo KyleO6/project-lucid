@@ -1,5 +1,4 @@
-// Complete original game time-scaled descendant; real LevelManager remains required.
-// Native-derived private source candidate; no fabricated callback/manager or acceptance.
+// Original game time-scaled descendant; level activation callbacks go through LevelManager.
 using Hardlight;
 using UnityEngine;
 using UnityEngine.Serialization;
