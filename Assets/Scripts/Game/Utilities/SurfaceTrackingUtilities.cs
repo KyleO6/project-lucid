@@ -70,7 +70,10 @@ namespace HardlightProject
                         if (hasHit) break;
                         continue;
                     }
-                    if (!ConeVolume.IsPositionInsideCone(worldPosition, cone.Origin, cone.Tangents, coneDistance, worldToLocal))
+                    // Original callback 0x06003a6b (0x6B7530) passes the GetClosestPointOnLine
+                    // projection as the containment helper's second argument, so the point is
+                    // tested from its projection on the axis, not from the cone origin.
+                    if (!ConeVolume.IsPositionInsideCone(worldPosition, pointOnLine, cone.Tangents, coneDistance, worldToLocal))
                     {
                         if (hasHit) break;
                         continue;

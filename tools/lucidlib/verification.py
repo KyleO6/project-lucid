@@ -11114,3 +11114,8 @@ EDITMODE_TESTS += tuple("ProjectLucid.Tests.OfflinePlatformHookTests." + name fo
     "HookPolarityCheckRejectsInvertedConditions",
 ))
 EDITMODE_TESTS += ("ProjectLucid.Tests.UIContainerGameCenterAccessPointTests.StartEnablesTheCanvasScalerOnWindowsAndLinuxPlayersAsOnMacOS",)
+# SurfaceTracking cone test from the projected axis point (#525).
+EDITMODE_TESTS += tuple("ProjectLucid.Tests.SurfaceTrackingConeOperandTests." + name for name in (
+    "InteriorAndExteriorPointsKeepTheirResults",
+    "RotatedBoundaryPointsFollowTheOriginalOperand",
+))
