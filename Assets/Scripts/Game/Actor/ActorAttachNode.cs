@@ -1,5 +1,5 @@
-// Complete original attach-node class candidate, including its two genuine nested types.
-// Native-derived; real Actor and Unity pose behavior remain unaccepted dependencies.
+// Original attach-node class, including its two nested types. Its attach poses come from the owning Actor
+// and Unity transform/animation state at runtime, which has not been verified in gameplay.
 using System;
 using System.Collections.Generic;
 using UnityEngine;

@@ -1,5 +1,5 @@
-// Complete original Game.Runtime02000051, all7fields/9native body candidates.
-// Genuine real Actor/audio/PFX/footstep dependencies remain required. Unaccepted.
+// Original Game.Runtime 02000051: all 7 fields and 9 method bodies. Its lookups hand out the Actor's animator,
+// audio, attach-point, PFX, form and footstep components; that integration has not been verified in gameplay.
 using UnityEngine;
 using Unity.IL2CPP.CompilerServices;
 namespace HardlightProject

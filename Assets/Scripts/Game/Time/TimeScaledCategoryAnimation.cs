@@ -1,7 +1,5 @@
 // Original Game.Runtime TimeScaledCategoryAnimation (0x020007f9), all four own bodies
 // and the genuine nested CategoryAnimation (0x020007fa), all three own bodies.
-// This private candidate still requires the complete original TimeScaledComponent_SDT
-// and its genuine LevelManager providers before the game closure can compile.
 using System;
 using System.Collections.Generic;
 using Hardlight;

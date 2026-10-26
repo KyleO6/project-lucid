@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Hardlight
 {
-    // Original dependency subset; other collection operations remain to be recovered.
+    // HLUnityCore.Runtime Hardlight.CollectionExtensions: both original methods.
     public static partial class CollectionExtensions
     {
         // HLUnityCore.Runtime 0x06000255: CLR null and negative index short-circuit before Count.
