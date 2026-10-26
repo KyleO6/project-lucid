@@ -161,6 +161,8 @@ namespace Apple.GameController.Controller
 
         public static GCControllerInputState PollController(GCControllerHandle controllerHandle)
         {
+            if (ProjectLucid.Offline.OfflineAdapters.Active) // Offline hook H-081: we read the controller's Input System gamepad instead of the Game Controller framework
+                return ProjectLucid.Offline.InputSystemGCControllers.Poll(controllerHandle);
             return GameControllerWrapper_PollController(controllerHandle.UniqueId);
         }
         #endregion
@@ -182,6 +184,8 @@ namespace Apple.GameController.Controller
 
         public static Texture2D GetSymbolForInputName(GCControllerHandle controllerHandle, GCControllerInputName inputName, GCControllerSymbolScale symbolScale, GCControllerRenderingMode renderingMode, float pointSize, GCControllerSymbolWeight symbolWeight, bool useFillStyle)
         {
+            if (ProjectLucid.Offline.OfflineAdapters.Active) // Offline hook H-082: there are no Game Controller symbols, so no texture, and the monitor uses the authored glyph map
+                return null;
             var response = GameControllerWrapper_GetSymbolForInputName(controllerHandle.UniqueId, inputName, symbolScale, renderingMode, pointSize, symbolWeight, useFillStyle);
             return response.GetTexture();
         }

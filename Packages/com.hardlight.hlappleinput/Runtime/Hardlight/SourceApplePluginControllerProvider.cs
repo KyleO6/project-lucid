@@ -46,6 +46,12 @@ namespace Hardlight
         // Original 0x06000042
         public override void Initialise(IBaseControllerProvider baseControllerProvider)
         {
+            if (ProjectLucid.Offline.OfflineAdapters.Active) // Offline hook H-080: the portable Input System provider is not a Game Controller provider, so the original cast left the source without controllers; we present its gamepads as Game Controller controllers
+            {
+                m_sourceApplePluginController =
+                    new SourceApplePluginController(ProjectLucid.Offline.InputSystemGCControllers.For(baseControllerProvider));
+                return;
+            }
             m_sourceApplePluginController =
                 new SourceApplePluginController(baseControllerProvider as IControllerProvider<GCController>);
         }
