@@ -96,6 +96,44 @@ namespace ProjectLucid
             }
         }
 
+        // The original importer's immutable texture binding (#538), checked before a proof assigns synthetic
+        // textures. The property is NonModifiableTextureData and the shader's own .meta binds exactly the original
+        // texture GUID. Where the prepared game copy supplies that texture, it must load, and the importer and a
+        // fresh material resolve to it; only when no asset has that GUID is the GUID identity alone established.
+        public static void RequireImportedTextures(Shader shader, string path, string[,] bindings)
+        {
+            for (int row = 0; row < bindings.GetLength(0); row++)
+                RequireImportedTexture(shader, path, bindings[row, 0], bindings[row, 1]);
+        }
+
+        public static void RequireImportedTexture(Shader shader, string path, string property, string textureGuid) =>
+            RequireImportedTexture(shader, path, property, textureGuid, System.IO.File.ReadAllText(path + ".meta"),
+                AssetDatabase.GUIDToAssetPath(textureGuid), AssetDatabase.LoadAssetAtPath<Texture>);
+
+        // The same check over supplied .meta text, texture path and loader, so a control can present a missing
+        // binding row or a texture that fails to load without altering a production asset.
+        public static void RequireImportedTexture(Shader shader, string path, string property, string textureGuid,
+            string meta, string texturePath, Func<string, Texture> load)
+        {
+            int index = shader.FindPropertyIndex(property);
+            Require(shader.name, index >= 0 && (shader.GetPropertyFlags(index) & ShaderPropertyFlags.NonModifiableTextureData) != 0,
+                property + " is NonModifiableTextureData");
+            var bindings = System.Text.RegularExpressions.Regex.Matches(meta,
+                @"\n  - " + property + @": \{fileID: 2800000, guid: (\w+),\s+type: 3\}");
+            Require(shader.name, bindings.Count == 1 && bindings[0].Groups[1].Value == textureGuid,
+                property + " is bound once to original texture " + textureGuid);
+            // No asset has the GUID: the prepared copy is absent, and the GUID identity above is all there is.
+            if (string.IsNullOrEmpty(texturePath)) return;
+            Texture texture = load(texturePath);
+            Require(shader.name, texture != null, property + " original texture " + texturePath + " loads as a texture");
+            var importer = (ShaderImporter)AssetImporter.GetAtPath(path);
+            Require(shader.name, importer != null && importer.GetNonModifiableTexture(property) == texture,
+                property + " importer default is the original texture");
+            var fresh = new Material(shader);
+            try { Require(shader.name, fresh.GetTexture(property) == texture, property + " a new material starts with the original texture"); }
+            finally { UnityEngine.Object.DestroyImmediate(fresh); }
+        }
+
         public static void Require(string shaderName, bool condition, string message)
         {
             if (!condition) throw new InvalidOperationException(shaderName + " verification failed: " + message);
